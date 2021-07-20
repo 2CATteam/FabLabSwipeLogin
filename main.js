@@ -7,26 +7,32 @@ const url = require('url')
 const WS = require('ws')
 const port = 3000
 var favicon = require('serve-favicon');
-const e = require('express')
+const fs = require('fs')
 
 app.use(cookieParser());
-app.use(express.static(__dirname + '/views'));
-app.use(favicon(__dirname + '/views/favicon.ico'));
+app.use(express.static(__dirname + '/static'));
+app.use(favicon(__dirname + '/static/favicon.ico'));
 
-var dbConnection = new (require("./lib/databaseTools.js"))("./users.db")
-
-//User information
-//Store everything in database
-//Websocket for sending information
-//Normal requests from client
+const dbPath = "./users.db"
+let dbConnection = null
+try {
+    if (fs.existsSync(dbPath)) {
+        dbConnection = new (require("./lib/databaseTools.js"))(dbPath)
+    } else {
+        dbConnection = new (require("./lib/databaseTools.js"))(dbPath)
+        dbConnection.createDatabase()
+    }
+} catch (e) {
+    console.error(e)
+}
 
 //Static HTML pages
 app.get('/guests', (req, res) => {
-    res.sendFile(path.join(__dirname, '/views/guestView.html'))
+    res.sendFile(path.join(__dirname, '/static/guestView.html'))
 })
 
 app.get('/staff', (req, res) => {
-    res.sendFile(path.join(__dirname, '/views/staffView.html'))
+    res.sendFile(path.join(__dirname, '/static/staffView.html'))
 })
 
 app.post('/signin', (req, res) => {
@@ -44,9 +50,10 @@ app.post('/signin', (req, res) => {
                 res.end(JSON.stringify({ status: "success", message: toReturn ? "Hello!" : "Goodbye!" }))
             } catch (e) {
                 if (e.message == "New user") {
-                    res.writeHead(401, { 'Content-Type': 'application/json' })
+                    res.writeHead(202, { 'Content-Type': 'application/json' })
                     res.end(JSON.stringify({ status: 'error', message: 'Register' }))
                 } else {
+                    console.error(e)
                     res.writeHead(400, { 'Content-Type': 'application/json' })
                     res.end(JSON.stringify({ status: "error", message: e.toString() }))
                 }
@@ -58,6 +65,7 @@ app.post('/signin', (req, res) => {
                 res.writeHead(200, { 'Content-Type': 'application/json' })
                 res.end(JSON.stringify({ status: "success", message: "Registered and logged in" }))
             } catch (e) {
+                console.error(e)
                 res.writeHead(400, { 'Content-Type': 'application/json' })
                 res.end(JSON.stringify({ status: "error", message: e.toString() }))
             }
@@ -101,32 +109,65 @@ WSS.on('connection', async function(ws) {
     })
 
     let status = await dbConnection.getStatus()
-    ws.send(JSON.stringify(status))
-    for (var i in status) {
-        ws.send(JSON.stringify(await dbConnection.getHistory(status[i].getStatus())))
+    let toSend = {
+        type: "guestList",
+        data: status
     }
+    ws.send(JSON.stringify(toSend))
+    for (var i in status) {
+        let history = await dbConnection.getHistory(status[i].guest_id)
+        toSend = {
+            type: "history",
+            user: status[i].guest_id,
+            data: history
+        }
+        ws.send(JSON.stringify(toSend))
+    }
+    let tasks = await dbConnection.getTasks()
+    toSend = {
+        type: "tasks",
+        data: tasks
+    }
+    ws.send(JSON.stringify(toSend))
 })
 
 async function broadcastGuest(id) {
     let userData = await dbConnection.getUser(id)
+    let toSend = {
+        type: "guest",
+        user: id,
+        data: userData
+    }
     WSS.clients.forEach((client) => {
-        if (client.readyState === WebSocket.OPEN) {
-            client.send(JSON.stringify(userData))
+        if (client.readyState === WS.OPEN) {
+            client.send(JSON.stringify(toSend))
         }
     })
+    if (!userData.here) return
     let historyData = await dbConnection.getHistory(id)
+    toSend = {
+        type: "history",
+        user: id,
+        data: historyData
+    }
     WSS.clients.forEach((client) => {
-        if (client.readyState === WebSocket.OPEN) {
-            client.send(JSON.stringify(historyData))
+        if (client.readyState === WS.OPEN) {
+            client.send(JSON.stringify(toSend))
         }
     })
 }
 
 async function broadcastTasks() {
     let taskData = await dbConnection.getTasks()
+    let toSend = {
+        type: "tasks",
+        data: taskData
+    }
     WSS.clients.forEach((client) => {
-        if (client.readyState === WebSocket.OPEN) {
-            client.send(JSON.stringify(taskData))
+        if (client.readyState === WS.OPEN) {
+            client.send(JSON.stringify(toSend))
         }
     })
 }
+
+console.log(`Listening on port ${port}!`)

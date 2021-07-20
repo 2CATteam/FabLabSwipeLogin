@@ -67,7 +67,7 @@ app.post('/signin', (req, res) => {
 
 const server = app.listen(port)
 
-var WSS = new WS.WebSocketServer({server: server, path: "/staffWS"})
+var WSS = new WS.Server({server: server, path: "/staffWS"})
 
 WSS.on('connection', async function(ws) {
     ws.on('message', async function(message) {
@@ -89,6 +89,14 @@ WSS.on('connection', async function(ws) {
                 await dbConnection.makeNote(args.id, args.type, args.note)
                 broadcastGuest(args.id)
                 break
+            case "addTask":
+                await dbConnection.createTask(args.name, args.description, args.period)
+                broadcastTasks()
+                break
+            case "doTask":
+                await dbConnection.doTask(args.id)
+                broadcastTasks()
+                break
         }
     })
 
@@ -106,10 +114,19 @@ async function broadcastGuest(id) {
             client.send(JSON.stringify(userData))
         }
     })
-    let historyData = await dbConnection.getHistory()
+    let historyData = await dbConnection.getHistory(id)
     WSS.clients.forEach((client) => {
         if (client.readyState === WebSocket.OPEN) {
             client.send(JSON.stringify(historyData))
+        }
+    })
+}
+
+async function broadcastTasks() {
+    let taskData = await dbConnection.getTasks()
+    WSS.clients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+            client.send(JSON.stringify(taskData))
         }
     })
 }

@@ -8,58 +8,104 @@
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script type="text/javascript" src="/staffScripts.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
-<body style="background-color: #343a40">
-    <nav>
-        <div class="nav nav-tabs" id="nav-tab" role="tablist">
-            <button class="nav-link active" id="nav-guests-tab" data-bs-toggle="tab" data-bs-target="#nav-guests" type="button" role="tab" aria-controls="nav-guests" aria-selected="true">Guests</button>
-            <button class="nav-link" id="nav-tasks-tab" data-bs-toggle="tab" data-bs-target="#nav-tasks" type="button" role="tab" aria-controls="nav-tasks" aria-selected="false">Tasks</button>
+<body class="bg-dark">
+    <nav class="navbar-dark">
+        <div class="nav nav-tabs mt-2" id="nav-tab" role="tablist">
+            <button class="nav-link active text-light ms-2" id="nav-guests-tab" data-bs-toggle="tab" data-bs-target="#nav-guests" type="button" role="tab" aria-controls="nav-guests" aria-selected="true">Guests</button>
+            <button class="nav-link text-light me-2" id="nav-tasks-tab" data-bs-toggle="tab" data-bs-target="#nav-tasks" type="button" role="tab" aria-controls="nav-tasks" aria-selected="false">Tasks</button>
         </div>
     </nav>
     <div class="tab-content" id="nav-tabContent">
         <div class="tab-pane fade show active p5" id="nav-guests" role="tabpanel" aria-labelledby="nav-guests-tab">
-            <table class="table table-striped table-dark w-100" id="guestsTable">
+            <table class="table table-striped table-dark table-hover w-100" id="guestsTable">
                 </tr>
-                    <th>   
+                    <th id="nameLabel">   
                         Name
                     </th>
-                    <th>   
-                        Green
-                    </th>
-                    <th>   
-                        Yellow
-                    </th>
-                    <th>   
-                        Red
-                    </th>
-                    <th>   
-                        Laser
-                    </th>
-                    <th>   
-                        3D Printing
-                    </th>
-                    <th>   
+                    <th class="text-center">   
                         Notes
                     </th>
                 </tr>
             </table>
         </div>
         <div class="tab-pane fade" id="nav-tasks" role="tabpanel" aria-labelledby="nav-tasks-tab">
-            <table class="table table-striped table-dark w-100" id="tasksTable">
-            </tr>
-                <th>   
-                    Name
-                </th>
-                <th>   
-                    Description
-                </th>
-                <th>   
-                    How often?
-                </th>
-                <th>   
-                    How soon?
-                </th>
-            </tr>
-        </table>
+            <table class="table table-dark w-100" id="tasksTable">
+                <tr>
+                    <th>   
+                        Name
+                    </th>
+                    <th>   
+                        Description
+                    </th>
+                    <th data-bs-toggle="tooltip" data-bs-placement="left" title="Task must be done every N days">
+                        Frequency
+                    </th>
+                    <th data-bs-toggle="tooltip" data-bs-placement="left" title="Task will be due in N days">   
+                        Days left
+                    </th>
+                    <th data-bs-toggle="tooltip" data-bs-placement="left" title="Mark completed tasks">   
+                        Action
+                    </th>
+                </tr>
+                <tr>
+                    <th>
+                        <input id="taskName" class="form-control align-middle" type="text" placeholder="New task name">
+                    </th>
+                    <th>
+                        <input id="taskDescription" class="form-control" type="text" placeholder="New task description">
+                    </th>
+                    <th  data-bs-toggle="tooltip" data-bs-placement="top" title="Task must be done every N days">
+                        <input id="taskPeriod" class="form-control" type="number" step="1" min="1" value="1">
+                    </th>
+                    <th>
+                    </th>
+                    <th>
+                        <button class="btn btn-primary" onclick="createTask()">Add Task</button>
+                    </th>
+                </tr>
+            </table>
+        </div>
+    </div>
+    <div id="managementModal" class="modal fade" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header flex-column">
+                    <h1 id="modalName">Person</h1>
+                    <p id="modalEmail">person@ou.edu</h1>
+                </div>
+                <div class="modal-body">
+                    <h3>Certifications</h3>
+                    <table id="certTable" class="table">
+                        <tr>
+                            <th>Certification</th>
+                            <th>Granted?</th>
+                            <th>Action</th>
+                        </tr>
+                    </table>
+                    <h3>Add note</h3>
+                    <label for="noteSelect" class="form-label">Note type:</label>
+                    <select id="noteSelect" class="form-select mb-3">
+                        <option selected value="info">Info</option>
+                        <option value="attention">Attention</option>
+                        <option value="problem">Problem</option>
+                    </select>
+                    <label for="noteText" class="form-label">Note text:</label>
+                    <textarea id="noteText" class="form-control mb-1" rows="3" placeholder="I hate this person because..."></textarea>
+                    <button class="btn btn-primary" onclick="submitNote()">Submit</button>
+                    <h3>Notes and History</h3>
+                    <table id="historyTable" class="table">
+                        <tr>
+                            <th>Date</th>
+                            <th>Type</th>
+                            <th>Details</th>
+                            <th>Action</th>
+                        </tr>
+                    </table>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Done</button>
+                </div>
+            </div>
         </div>
     </div>
 </body>

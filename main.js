@@ -1,15 +1,16 @@
 const express = require('express')
 const app = express()
 const path = require('path')
-const https = require('https')
-const cookieParser = require('cookie-parser')
-const url = require('url')
+//const https = require('https')
+//const cookieParser = require('cookie-parser')
+//const url = require('url')
 const WS = require('ws')
 const port = 3000
 var favicon = require('serve-favicon');
 const fs = require('fs')
+const instances = require("./lib/instances.js")
 
-app.use(cookieParser());
+//app.use(cookieParser());
 app.use(express.static(__dirname + '/static'));
 app.use(favicon(__dirname + '/static/favicon.ico'));
 
@@ -79,7 +80,14 @@ var WSS = new WS.Server({server: server, path: "/staffWS"})
 
 WSS.on('connection', async function(ws) {
     ws.on('message', async function(message) {
-        let args = JSON.parse(message.data)
+        let args = {}
+        try {
+            args = JSON.parse(message)
+            console.log(args)
+        } catch (e) {
+            console.error(e)
+            console.error(message)
+        }
         switch (args.type) {
             case "swipe":
                 await dbConnection.userSwipe(args.id)
@@ -94,26 +102,40 @@ WSS.on('connection', async function(ws) {
                 broadcastGuest(args.id)
                 break
             case "note":
-                await dbConnection.makeNote(args.id, args.type, args.note)
+                await dbConnection.makeNote(args.id, args.level, args.note)
                 broadcastGuest(args.id)
                 break
+            case "resolve":
+                await dbConnection.resolve(args.id)
+                broadcastGuest(args.user)
+                break
             case "addTask":
-                await dbConnection.createTask(args.name, args.description, args.period)
+                await dbConnection.createTask(args.name, args.description, args.period, args.date)
                 broadcastTasks()
                 break
             case "doTask":
-                await dbConnection.doTask(args.id)
+                await dbConnection.doTask(args.id, args.date)
                 broadcastTasks()
                 break
         }
     })
 
-    let status = await dbConnection.getStatus()
+    //Send certs information
     let toSend = {
+        type: "certs",
+        data: instances.fabLab.certs
+    }
+    ws.send(JSON.stringify(toSend))
+
+    //Send information on who's currently here
+    let status = await dbConnection.getStatus()
+    toSend = {
         type: "guestList",
         data: status
     }
     ws.send(JSON.stringify(toSend))
+
+    //Send history information for each user
     for (var i in status) {
         let history = await dbConnection.getHistory(status[i].guest_id)
         toSend = {
@@ -123,6 +145,8 @@ WSS.on('connection', async function(ws) {
         }
         ws.send(JSON.stringify(toSend))
     }
+
+    //Send information on what tasks need to be completed
     let tasks = await dbConnection.getTasks()
     toSend = {
         type: "tasks",

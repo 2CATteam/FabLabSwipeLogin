@@ -1,0 +1,15 @@
+.nav-link.active.text-light {
+    color: #000000 !important;
+}
+
+.white-spacer {
+    white-space: pre-line;
+}
+
+.popover-body {
+    white-space: pre-line;
+}
+
+.notes p {
+    z-index: 100;
+}

@@ -388,9 +388,9 @@ function updateTasks(newList) {
             //https://stackoverflow.com/questions/467336/how-to-use-slidedown-or-show-function-on-a-table-row
             tasks[index].element
                 .find('td')
+                .css("padding", "0")
                 .wrapInner('<div style="display: block; padding: .5rem .5rem" />')
                 .parent()
-                .css("padding", "0 0")
                 .find('td > div')
                 .slideUp(400, function() { this.remove() }.bind(tasks[index].element))
             tasks.splice(index, 1)
@@ -400,9 +400,9 @@ function updateTasks(newList) {
                 //https://stackoverflow.com/questions/467336/how-to-use-slidedown-or-show-function-on-a-table-row
                 tasks[index].element
                     .find('td')
+                    .css("padding", "0")
                     .wrapInner('<div style="display: block;" />')
                     .parent()
-                    .css("padding", "0 0")
                     .find('td > div')
                     .slideUp(400, function() { this.remove() }.bind(tasks[index].element))
                 tasks.splice(index, 1)

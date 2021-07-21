@@ -83,7 +83,6 @@ WSS.on('connection', async function(ws) {
         let args = {}
         try {
             args = JSON.parse(message)
-            console.log(args)
         } catch (e) {
             console.error(e)
             console.error(message)

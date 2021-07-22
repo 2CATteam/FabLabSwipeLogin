@@ -127,8 +127,6 @@ function generateRow(guest) {
             }
         }
     }
-    console.log(certDoms)
-    console.log(toRemove)
     certDoms = certDoms.filter((val, index) => !toRemove[index])
 
     for (let i in certDoms) {
@@ -263,7 +261,7 @@ function loadModal(guest) {
             buttonHtml = ""
         }
         let html = `<tr class="${color}">
-            <td>
+            <td data-bs-toggle="tooltip" data-bs-placement="top" title="${guests[guest].history[i].date.toLocaleTimeString()}">
                 ${formatter.format(guests[guest].history[i].date)}
             </td>
             <td>
@@ -277,7 +275,9 @@ function loadModal(guest) {
                 ${buttonHtml}
             </td>
         </tr>`
-        $("#historyTable").append($(html))
+        let element = $(html)
+        $("#historyTable").append(element)
+        element.find('[data-bs-toggle="tooltip"]').tooltip()
     }
 }
 
@@ -416,8 +416,10 @@ function updateTasks(newList) {
         }
     })
     let index = 0
+    let start = 0
     for (let i in newList) {
         while (tasksInclude(newList[i].task_id) && tasks[index].task_id != newList[i].task_id) {
+            if ((Math.floor((now - tasks[index].date) / 86400000) - tasks[index].period) >= 0) start++
             //https://stackoverflow.com/questions/467336/how-to-use-slidedown-or-show-function-on-a-table-row
             tasks[index].element
                 .find('td')
@@ -430,6 +432,7 @@ function updateTasks(newList) {
         }
         if (tasksInclude(newList[i].task_id)) {
             if (tasks[index].date - newList[i].date != 0) {
+                if ((Math.floor((now - tasks[index].date) / 86400000) - tasks[index].period) >= 0) start++
                 //https://stackoverflow.com/questions/467336/how-to-use-slidedown-or-show-function-on-a-table-row
                 tasks[index].element
                     .find('td')
@@ -471,7 +474,9 @@ function updateTasks(newList) {
             if (i > 0) {
                 newList[i - 1].element.after(newList[i].element)
             } else {
-                $("#tasksTable tr").eq(0).after(newList[i].element)
+                if ($("#dueNowMarker").length) start++
+                if ((Math.floor((now - newList[0].date) / 86400000) - newList[0].period) < 0 && $("#dueLaterMarker").length) start++
+                $("#tasksTable tr").eq(start).after(newList[i].element)
             }
             //https://stackoverflow.com/questions/467336/how-to-use-slidedown-or-show-function-on-a-table-row
             newList[i].element
@@ -480,6 +485,36 @@ function updateTasks(newList) {
                 .parent()
                 .find('td > div')
                 .slideDown()
+        }
+    }
+    if (tasks.length > 0 && ((Math.floor((now - tasks[0].date) / 86400000) - tasks[0].period) >= 0)) {
+        if (!$("#dueNowMarker").length) {
+            let element = $(`<tr id="dueNowMarker">
+                <td colspan="5" class="fs-5">
+                    Due now:
+                </td>
+            </tr>`)
+            $("#tasksTable tr").eq(0).after(element)
+            element.slideDown()
+        }
+    } else {
+        $("#dueNowMarker")
+            .find('td')
+            .css("padding", "0")
+            .wrapInner('<div style="display: block; padding: .5rem .5rem" />')
+            .parent()
+            .find('td > div')
+            .slideUp(400, function() { this.remove() }.bind($("#dueNowMarker")))
+    }
+    $("#dueLaterMarker").remove()
+    for (let i in tasks) {
+        if ((Math.floor((now - tasks[i].date) / 86400000) - tasks[i].period) < 0) {
+            tasks[i].element.before($(`<tr id="dueLaterMarker">
+                <td colspan="5" class="fs-5">
+                    Due later:
+                </td>
+            </tr>`))
+            return
         }
     }
 }

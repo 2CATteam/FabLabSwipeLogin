@@ -95,7 +95,7 @@ app.post('/auth', (req, res) => {
     })
 })
 
-//Swipe in (not authentication, what was I thinking)
+//Swipe in (not authentication, what was I thinking with this path name...)
 app.post('/signin', (req, res) => {
     let info = ""
     req.on("data", (chunk) => {

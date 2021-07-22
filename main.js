@@ -2,40 +2,100 @@ const express = require('express')
 const app = express()
 const path = require('path')
 //const https = require('https')
-//const cookieParser = require('cookie-parser')
+const cookieParser = require('cookie-parser')
 //const url = require('url')
 const WS = require('ws')
 const port = 3000
-var favicon = require('serve-favicon');
-const fs = require('fs')
-const instances = require("./lib/instances.js")
+const favicon = require('serve-favicon');
+const {v4: uuidv4} = require('uuid')
+var instances = require("./lib/instances.js")
+const passwords = require("./lib/passwords.js")
+const dbTools = require("./lib/databaseTools.js")
 
-//app.use(cookieParser());
+app.use(cookieParser());
 app.use(express.static(__dirname + '/static'));
 app.use(favicon(__dirname + '/static/favicon.ico'));
 
-const dbPath = "./users.db"
-let dbConnection = null
-try {
-    if (fs.existsSync(dbPath)) {
-        dbConnection = new (require("./lib/databaseTools.js"))(dbPath)
-    } else {
-        dbConnection = new (require("./lib/databaseTools.js"))(dbPath)
-        dbConnection.createDatabase()
+function getDBConnection(secret) {
+    let name = getNameFromAuth(secret)
+    if (name) {
+        if (instances[name].dbConnection) {
+            return instances[name].dbConnection
+        } else {
+            instances[name].dbConnection = new dbTools(instances[name].dbName)
+            return instances[name].dbConnection
+        }
     }
-} catch (e) {
-    console.error(e)
+}
+
+function getDBConnectionFromName(name) {
+    if (name) {
+        if (instances[name].dbConnection) {
+            return instances[name].dbConnection
+        } else {
+            instances[name].dbConnection = new dbTools(instances[name].dbName)
+            return instances[name].dbConnection
+        }
+    }
+}
+
+function getNameFromAuth(secret) {
+    for (let i in instances) {
+        if (instances[i].tokens?.includes(secret)) {
+            return i
+        }
+    }
+    return null
 }
 
 //Static HTML pages
 app.get('/guests', (req, res) => {
+    res.cookie('shop', 'fabLab')
+    res.sendFile(path.join(__dirname, '/static/guestView.html'))
+})
+
+app.get('/guestsTest', (req, res) => {
+    res.cookie('shop', 'test')
     res.sendFile(path.join(__dirname, '/static/guestView.html'))
 })
 
 app.get('/staff', (req, res) => {
-    res.sendFile(path.join(__dirname, '/static/staffView.html'))
+    for (let i in instances) {
+        if (instances[i].tokens?.includes(req.cookies?.token)) {
+            res.sendFile(path.join(__dirname, '/static/staffView.html'))
+            return
+        }
+    }
+    res.sendFile(path.join(__dirname, '/static/loginView.html'))
 })
 
+//Authentication
+app.post('/auth', (req, res) => {
+    let info = ""
+    req.on("data", (chunk) => {
+        info += chunk
+    })
+    req.on('end', async () => {
+        let args = JSON.parse(info)
+        for (let i in instances) {
+            if (args.username == passwords[i].username && args.password == passwords[i].password) {
+                if (!instances[i].tokens) {
+                    instances[i].tokens = []
+                }
+                let token = uuidv4()
+                instances[i].tokens.push(token)
+                res.cookie('token', token, {maxAge: 86400000 * 14})
+                res.writeHead(200)
+                res.end()
+                return
+            }
+        }
+        res.writeHead(401, "Incorrect username or password")
+        res.end()
+    })
+})
+
+//Swipe in (not authentication, what was I thinking)
 app.post('/signin', (req, res) => {
     let info = ""
     req.on("data", (chunk) => {
@@ -43,10 +103,15 @@ app.post('/signin', (req, res) => {
     })
     req.on('end', async () => {
         let args = JSON.parse(info)
+        let dbConnection = getDBConnectionFromName(req.cookies.shop)
+        if (!dbConnection) {
+            res.writeHead(400, "Invalid shop")
+            return
+        }
         if (args.type == "swipe") {
             try {
                 let toReturn = await dbConnection.userSwipe(args.id)
-                broadcastGuest(args.id)
+                broadcastGuest(req.cookies.shop, args.id)
                 res.writeHead(200, { 'Content-Type': 'application/json' })
                 res.end(JSON.stringify({ status: "success", message: toReturn ? "Hello!" : "Goodbye!" }))
             } catch (e) {
@@ -62,7 +127,7 @@ app.post('/signin', (req, res) => {
         } else if (args.type == "register") {
             try {
                 await dbConnection.createUser(args.id, args.name, args.email, true)
-                broadcastGuest(args.id)
+                broadcastGuest(req.cookies.shop, args.id)
                 res.writeHead(200, { 'Content-Type': 'application/json' })
                 res.end(JSON.stringify({ status: "success", message: "Registered and logged in" }))
             } catch (e) {
@@ -87,44 +152,57 @@ WSS.on('connection', async function(ws) {
             console.error(e)
             console.error(message)
         }
+        if (!getNameFromAuth(ws.secret)) {
+            if (args.secret && getNameFromAuth(args.secret)) {
+                ws.secret = args.secret
+                onAuth(ws)
+            }
+            return
+        }
+        let dbConnection = getDBConnection(ws.secret)
         switch (args.type) {
             case "swipe":
                 await dbConnection.userSwipe(args.id)
-                broadcastGuest(args.id)
+                broadcastGuest(getNameFromAuth(ws.secret), args.id)
                 break
             case "addCert":
                 await dbConnection.addCert(args.id, args.cert, args.reason)
-                broadcastGuest(args.id)
+                broadcastGuest(getNameFromAuth(ws.secret), args.id)
                 break
             case "revokeCert":
                 await dbConnection.removeCert(args.id, args.cert, args.reason)
-                broadcastGuest(args.id)
+                broadcastGuest(getNameFromAuth(ws.secret), args.id)
                 break
             case "note":
                 await dbConnection.makeNote(args.id, args.level, args.note)
-                broadcastGuest(args.id)
+                broadcastGuest(getNameFromAuth(ws.secret), args.id)
                 break
             case "resolve":
                 await dbConnection.resolve(args.id)
-                broadcastGuest(args.user)
+                broadcastGuest(getNameFromAuth(ws.secret), args.user)
                 break
             case "addTask":
                 await dbConnection.createTask(args.name, args.description, args.period, args.date)
-                broadcastTasks()
+                broadcastTasks(getNameFromAuth(ws.secret))
                 break
             case "doTask":
                 await dbConnection.doTask(args.id, args.date)
-                broadcastTasks()
+                broadcastTasks(getNameFromAuth(ws.secret))
                 break
         }
     })
 
+    
+})
+
+async function onAuth(ws) {
     //Send certs information
     let toSend = {
         type: "certs",
-        data: instances.fabLab.certs
+        data: instances[getNameFromAuth(ws.secret)]?.certs
     }
     ws.send(JSON.stringify(toSend))
+    let dbConnection = getDBConnection(ws.secret)
 
     //Send information on who's currently here
     let status = await dbConnection.getStatus()
@@ -152,9 +230,10 @@ WSS.on('connection', async function(ws) {
         data: tasks
     }
     ws.send(JSON.stringify(toSend))
-})
+}
 
-async function broadcastGuest(id) {
+async function broadcastGuest(name, id) {
+    let dbConnection = getDBConnectionFromName(name)
     let userData = await dbConnection.getUser(id)
     let toSend = {
         type: "guest",
@@ -162,7 +241,7 @@ async function broadcastGuest(id) {
         data: userData
     }
     WSS.clients.forEach((client) => {
-        if (client.readyState === WS.OPEN) {
+        if (client.readyState === WS.OPEN && getNameFromAuth(client.secret) == name) {
             client.send(JSON.stringify(toSend))
         }
     })
@@ -174,20 +253,21 @@ async function broadcastGuest(id) {
         data: historyData
     }
     WSS.clients.forEach((client) => {
-        if (client.readyState === WS.OPEN) {
+        if (client.readyState === WS.OPEN && getNameFromAuth(client.secret) == name) {
             client.send(JSON.stringify(toSend))
         }
     })
 }
 
-async function broadcastTasks() {
+async function broadcastTasks(name) {
+    let dbConnection = getDBConnectionFromName(name)
     let taskData = await dbConnection.getTasks()
     let toSend = {
         type: "tasks",
         data: taskData
     }
     WSS.clients.forEach((client) => {
-        if (client.readyState === WS.OPEN) {
+        if (client.readyState === WS.OPEN && getNameFromAuth(client.secret) == name) {
             client.send(JSON.stringify(toSend))
         }
     })

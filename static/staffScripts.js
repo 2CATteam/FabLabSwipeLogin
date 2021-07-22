@@ -18,6 +18,9 @@ function openSocket() {
     socket = new WebSocket(((window.location.protocol === "https:") ? "wss://" : "ws://") + window.location.host + "/staffWS");
     socket.onopen = function onConnect() {
         console.log("Connected!")
+        socket.send(JSON.stringify({
+            secret: getCookie("token")
+        }))
     }
     socket.onmessage = function onMessage(event) {
         let obj = JSON.parse(event.data)
@@ -95,23 +98,51 @@ function rebuildGuests(newList) {
 }
 
 function generateRow(guest) {
-    let toReturn = `<tr style="height: 1px"><td class="align-middle">${guest.name}</td>`
+    let toReturn = `<tr style="height: 1px"><td class="align-middle">${guest.name}</td><td style="height: inherit"><div class="d-flex align-items-center h-100">`
+    let certDoms = []
+    let toRemove = []
     for (let i in certs) {
-        toReturn += `<td style="height: inherit">
-            <div class="d-flex align-items-center justify-content-center w-100 h-100">
-                <div class="d-flex h-100 w-100 align-items-center justify-content-center" style="max-width: 30px">
-                    <input readonly onclick="return false;" type="checkbox" ${guest.certs & (1 << certs[i].id) ? "checked" : ""}>
-                <div>
-            </div>
-        </td>`
+        let html = `<div class="certBox me-2" style="opacity: ${guest.certs & (1 << certs[i].id) ? "1" : "0"};">
+            <div class="w-100 h-100" style="background-color: ${certs[i].color ?? "#FFFFFF"}" ${guest.certs & (1 << certs[i].id) ? 'data-bs-toggle="tooltip"' : ""} data-bs-placement="top" title="${certs[i].name}"></div>
+        </div>`
+        certDoms.push(html)
+        toRemove.push(0)
     }
-    toReturn += `<td class="notes"></td></tr>`
+    for (let i in certs) {
+        for (let j = parseInt(i) + 1; j < certs.length; j++) {
+            if (certs[i].group == undefined || certs[j].group == undefined) {
+                continue
+            }
+            if (certs[i].group != certs[j].group) {
+                continue
+            }
+            if ((guest.certs & (1 << certs[i].id)) && !(guest.certs & (1 << certs[j].id))) {
+                toRemove[j] = 1
+            } else if (!(guest.certs & (1 << certs[i].id)) && (guest.certs & (1 << certs[j].id))) {
+                toRemove[i] = 1
+            } else if (certs[i].id > certs[j].id) {
+                toRemove[j] = 1
+            } else if (certs[i].id < certs[j].id) {
+                toRemove[i] = 1
+            }
+        }
+    }
+    console.log(certDoms)
+    console.log(toRemove)
+    certDoms = certDoms.filter((val, index) => !toRemove[index])
+
+    for (let i in certDoms) {
+        toReturn += certDoms[i]
+    }
+
+    toReturn += `</div></td><td style="height: inherit"><div class="d-flex notes align-items-center align-middle h-100"></div></td></tr>`
     toReturn = $(toReturn)
     toReturn.click(guest, (e) => {
         console.log(e)
         showModal(e.data.guest_id)
     })
-    return $(toReturn)
+    toReturn.find('[data-bs-toggle="tooltip"]').tooltip()
+    return toReturn
 }
 
 function swipeGuest(guest) {
@@ -224,6 +255,8 @@ function loadModal(guest) {
         }
         if (type == "Certification") {
             description = `${findCertById(guests[guest].history[i].cert).name} certification was ${guests[guest].history[i].type == 3 ? "revoked" : "added"} ${guests[guest].history[i].type == 7 ? "automatically" : "manually"}${guests[guest].history[i].note ? " with the following reason:\n\n" + guests[guest].history[i].note : ""}`
+        } else if (type == "Visit" && description) {
+            description = `Left at ${new Date(description).toLocaleTimeString()}`
         }
         let buttonHtml = `<button class="btn btn-primary" onclick="resolve(${guests[guest].history[i].event_id}, ${guest})">Resolve</button>`
         if (guests[guest].history[i].resolved) {
@@ -331,7 +364,7 @@ function markNotes(user) {
             string += notes.notes[i] + "\n\n"
         }
         string = string.trim()
-        let html = `<p data-bs-toggle="popover" data-bs-trigger="hover focus" title="Notes" data-bs-content="${string}" data-bs-placement="left" tab-index="0" class="text-center">📝</p>`
+        let html = `<p data-bs-toggle="popover" data-bs-trigger="hover focus" title="Notes" data-bs-content="${string}" data-bs-placement="left" tab-index="0" class="text-center my-0 fs-5">📝</p>`
         let element = $(html).popover()
         parent.append(element)
     }
@@ -341,7 +374,7 @@ function markNotes(user) {
             string += notes.attention[i] + "\n\n"
         }
         string = string.trim()
-        let html = `<p data-bs-toggle="popover" data-bs-trigger="hover focus" title="Attention" data-bs-content="${string}" data-bs-placement="left" tab-index="0" class="text-center">⚠</p>`
+        let html = `<p data-bs-toggle="popover" data-bs-trigger="hover focus" title="Attention" data-bs-content="${string}" data-bs-placement="left" tab-index="0" class="text-center my-0 fs-5">⚠</p>`
         let element = $(html).popover()
         parent.append(element)
     }
@@ -351,7 +384,7 @@ function markNotes(user) {
             string += notes.problem[i] + "\n\n"
         }
         string = string.trim()
-        let html = `<p data-bs-toggle="popover" data-bs-trigger="hover focus" title="Problems" data-bs-content="${string}" data-bs-placement="left" tab-index="0" class="text-center">🤬</p>`
+        let html = `<p data-bs-toggle="popover" data-bs-trigger="hover focus" title="Problems" data-bs-content="${string}" data-bs-placement="left" tab-index="0" class="text-center my-0 fs-5">🤬</p>`
         let element = $(html).popover()
         parent.append(element)
     }
@@ -361,7 +394,7 @@ function markNotes(user) {
             string += notes.revoked[i] + "\n\n"
         }
         string = string.trim()
-        let html = `<p data-bs-toggle="popover" data-bs-trigger="hover focus" title="Revoked Certifications" data-bs-content="${string}" data-bs-placement="left" tab-index="0" class="text-center">😿</p>`
+        let html = `<p data-bs-toggle="popover" data-bs-trigger="hover focus" title="Revoked Certifications" data-bs-content="${string}" data-bs-placement="left" tab-index="0" class="text-center my-0 fs-5">😿</p>`
         let element = $(html).popover()
         parent.append(element)
     }
@@ -508,21 +541,8 @@ function ageTasks() {
 }
 
 function makeCertLabels(newList) {
-    let last = $("#nameLabel")
-    for (let i in certs) {
-        certs[i].dom.remove()
-    }
-    certs = []
-    for (let i in newList) {
-        let html = `<th class="text-center">
-            ${newList[i].name}
-        </th>`
-        let element = $(html)
-        element.insertAfter(last)
-        last = element
-        newList[i].dom = element
-        certs.push(newList[i])
-    }
+    certs = newList
+    //50,000 Lines of Code used to live here. Now, it's a ghost town
 }
 
 $(document).ready(() => {
@@ -533,3 +553,19 @@ $(document).ready(() => {
         return new bootstrap.Tooltip(tooltipTriggerEl)
     })
 })
+
+function getCookie(key) {
+	obj = {}
+	list = document.cookie.split(";")
+	for (x in list) {
+		if (list[x]) {
+			pair = list[x].split("=", 2)
+			obj[pair[0].trim()] = pair[1].trim()
+		}
+	}
+	return obj[key]
+}
+
+function setCookie(key, value) {
+	document.cookie = `${key}=${value}`
+}

@@ -13,3 +13,8 @@
 .notes p {
     z-index: 100;
 }
+
+.certBox {
+    width: 35px;
+    height: 35px;
+}

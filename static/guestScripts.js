@@ -75,5 +75,5 @@ $(document).ready(() => {
         }
     })
     $("#swipeArea").focus()
-    window.scrollTo({left: window.innerWidth * 2, top: 0, behavior: auto})
+    window.scrollTo({left: window.innerWidth * 2, top: 0, behavior: "auto"})
 })

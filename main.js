@@ -56,7 +56,7 @@ app.get('/guests', (req, res) => {
 
 app.get('/guestsTest', (req, res) => {
     res.cookie('shop', 'test')
-    res.sendFile(path.join(__dirname, '/static/guestView.html'))
+    res.sendFile(path.join(__dirname, '/static/guestViewNew.html'))
 })
 
 app.get('/staff', (req, res) => {

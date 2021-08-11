@@ -6,6 +6,11 @@ function signIn(id) {
             console.log(xhr)
             if (xhr.status == 202) {
                 showRegistration(id)
+            } else if (xhr.status == 200) {
+                window.scrollTo(window.innerWidth * 3, 0)
+                setTimeout(showHome, 2000)
+            } else {
+                console.log(xhr.status)
             }
         })
         .fail((data, status, xhr) => {
@@ -20,7 +25,8 @@ function showRegistration(id) {
     $("#IDInput").val(id ? id : "")
     $("#NameInput").val("")
     $("#EmailInput").val("")
-    $("#registrationModal").modal('show')
+    $("#NameInput").focus()
+    window.scrollTo(window.innerWidth * 1, 0)
 }
 
 function register() {
@@ -35,8 +41,12 @@ function register() {
             console.log(status)
             console.log(xhr)
             if (data.message == "Registered and logged in") {
-                $("#registrationModal").modal('hide')
+                window.scrollTo(0, 0)
+                setTimeout(showHome, 4000)
             }
+            $("#IDInput").val("")
+            $("#NameInput").val("")
+            $("#EmailInput").val("")
         })
         .fail((data, status, xhr) => {
             console.error(data)
@@ -44,6 +54,11 @@ function register() {
             console.error(xhr)
         }
     )
+}
+
+function showHome() {
+    window.scrollTo(window.innerWidth * 2, 0)
+    $("#swipeArea").focus()
 }
 
 $(document).ready(() => {
@@ -59,4 +74,6 @@ $(document).ready(() => {
             console.log(data)
         }
     })
+    $("#swipeArea").focus()
+    window.scrollTo(window.innerWidth * 2, 0)
 })

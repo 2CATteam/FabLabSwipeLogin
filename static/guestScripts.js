@@ -7,7 +7,7 @@ function signIn(id) {
             if (xhr.status == 202) {
                 showRegistration(id)
             } else if (xhr.status == 200) {
-                window.scrollTo(window.innerWidth * 3, 0)
+                window.scrollTo({left: window.innerWidth * 3, top: 0, behavior: "smooth"})
                 setTimeout(showHome, 2000)
             } else {
                 console.log(xhr.status)
@@ -26,7 +26,7 @@ function showRegistration(id) {
     $("#NameInput").val("")
     $("#EmailInput").val("")
     $("#NameInput").focus()
-    window.scrollTo(window.innerWidth * 1, 0)
+    window.scrollTo({left: window.innerWidth, top: 0, behavior: "smooth"})
 }
 
 function register() {
@@ -41,7 +41,7 @@ function register() {
             console.log(status)
             console.log(xhr)
             if (data.message == "Registered and logged in") {
-                window.scrollTo(0, 0)
+                window.scrollTo({left: 0, top: 0, behavior: "smooth"})
                 setTimeout(showHome, 4000)
             }
             $("#IDInput").val("")
@@ -57,8 +57,8 @@ function register() {
 }
 
 function showHome() {
-    window.scrollTo(window.innerWidth * 2, 0)
     $("#swipeArea").focus()
+    window.scrollTo({left: window.innerWidth * 2, top: 0, behavior: "smooth"})
 }
 
 $(document).ready(() => {
@@ -75,5 +75,5 @@ $(document).ready(() => {
         }
     })
     $("#swipeArea").focus()
-    window.scrollTo({left: window.innerWidth * 2, top: 0, behavior: "auto"})
+    window.scrollTo({left: window.innerWidth * 2, top: 0, behavior: "instant"})
 })

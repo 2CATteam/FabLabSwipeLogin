@@ -1,6 +1,7 @@
 var guests = {}
 var tasks = []
 var certs = []
+var shown = null
 var socket = null
 
 const history_types = {
@@ -33,14 +34,17 @@ function openSocket() {
                 swipeGuest(obj.data)
                 break
             case "history":
+                console.log("Got user history")
                 for (let i in obj.data) {
                     obj.data[i].date = new Date(obj.data[i].date)
                 }
-                guests[obj.user].history = obj.data
+                if (guests[obj.user]) {
+                    guests[obj.user].history = obj.data
+                    markNotes(obj.user)
+                }
                 if ($("#managementModal").data("showing") == obj.user) {
                     loadModal(obj.user)
                 }
-                markNotes(obj.user)
                 break
             case "tasks":
                 updateTasks(obj.data)
@@ -177,17 +181,45 @@ function swipeGuest(guest) {
     }
 }
 
-function loadModal(guest) {
+async function loadModal(guest) {
+
+    shown = guests[guest]
+
+    if (!shown) {
+        shown = await (() => {
+            return new Promise((resolve, reject) => {
+                $.post("/guest", JSON.stringify({user: guest}))
+                    .done((data, status, xhr) => {
+                        if (xhr.status == 200) {
+                            for (let i in data.history) {
+                                data.history[i].date = new Date(data.history[i].date)
+                            }
+                            resolve(data)
+                        } else {
+                            reject(status)
+                        }
+                    })
+                    .fail((data, status, xhr) => {
+                        console.error(data)
+                        console.error(status)
+                        console.error(xhr)
+                        reject(status)
+                    }
+                )
+            })
+        })()
+    }
+    
     $("#managementModal").data("showing", guest)
     
     //Set the names of the modal
-    $("#modalName").text(guests[guest].name)
-    $("#modalEmail").text(guests[guest].email)
+    $("#modalName").text(shown.name)
+    $("#modalEmail").text(shown.email)
 
     //Fills the cert table
     $("#certTable").find("td").parents("tr").remove()
     for (let i in certs) {
-        let lacks = !(guests[guest].certs & (1 << certs[i].id))
+        let lacks = !(shown.certs & (1 << certs[i].id))
         let html = `<tr>
             <td>
                 ${certs[i].name}
@@ -204,7 +236,7 @@ function loadModal(guest) {
 
     //Fill the History table
     $("#historyTable td").parents("tr").remove()
-    guests[guest].history.sort((a, b) => {
+    shown.history.sort((a, b) => {
         if (a.resolved && !b.resolved) {
             return 1
         } else if (b.resolved && !a.resolved) {
@@ -218,11 +250,11 @@ function loadModal(guest) {
         }
     })
     let formatter = new Intl.DateTimeFormat('en-us')
-    for (let i in guests[guest].history) {
+    for (let i in shown.history) {
         let type = "Unknown"
         let color = ""
-        let description = guests[guest].history[i].note ? guests[guest].history[i].note : ""
-        switch (guests[guest].history[i].type) {
+        let description = shown.history[i].note ? shown.history[i].note : ""
+        switch (shown.history[i].type) {
             case history_types.NOTE:
                 type = "Note"
                 color = "table-info"
@@ -248,21 +280,21 @@ function loadModal(guest) {
                 type = "Registered"
                 break
         }
-        if (guests[guest].history[i].resolved) {
+        if (shown.history[i].resolved) {
             color = "table-secondary"
         }
         if (type == "Certification") {
-            description = `${findCertById(guests[guest].history[i].cert).name} certification was ${guests[guest].history[i].type == 3 ? "revoked" : "added"} ${guests[guest].history[i].type == 7 ? "automatically" : "manually"}${guests[guest].history[i].note ? " with the following reason:\n\n" + guests[guest].history[i].note : ""}`
+            description = `${findCertById(shown.history[i].cert).name} certification was ${shown.history[i].type == 3 ? "revoked" : "added"} ${shown.history[i].type == 7 ? "automatically" : "manually"}${shown.history[i].note ? " with the following reason:\n\n" + shown.history[i].note : ""}`
         } else if (type == "Visit" && description) {
             description = `Left at ${new Date(description).toLocaleTimeString()}`
         }
-        let buttonHtml = `<button class="btn btn-primary" onclick="resolve(${guests[guest].history[i].event_id}, ${guest})">Resolve</button>`
-        if (guests[guest].history[i].resolved) {
+        let buttonHtml = `<button class="btn btn-primary" onclick="resolve(${shown.history[i].event_id}, ${guest})">Resolve</button>`
+        if (shown.history[i].resolved) {
             buttonHtml = ""
         }
         let html = `<tr class="${color}">
-            <td data-bs-toggle="tooltip" data-bs-placement="top" title="${guests[guest].history[i].date.toLocaleTimeString()}">
-                ${formatter.format(guests[guest].history[i].date)}
+            <td data-bs-toggle="tooltip" data-bs-placement="top" title="${shown.history[i].date.toLocaleTimeString()}">
+                ${formatter.format(shown.history[i].date)}
             </td>
             <td>
                 ${type}
@@ -281,13 +313,19 @@ function loadModal(guest) {
     }
 }
 
-function showModal(guest) {
-    loadModal(guest)
+async function showModal(guest) {
+    await loadModal(guest)
     $("#managementModal").modal('show')
 }
 
 function addRemoveCert(guest, index) {
-    if (guests[guest].certs & (1 << certs[index].id)) {
+    let guestCerts = guests[guest]?.certs ?? shown?.certs
+    if (guestCerts === null) {
+        console.error("I have no idea who or where this guest is:")
+        console.error(guest)
+        return
+    }
+    if (guestCerts & (1 << certs[index].id)) {
         let reason = prompt("Please provide a reason for revoking this certification\n\nThis will be visible to the guest, so please be professional")
         if (reason == null) return 
         socket.send(JSON.stringify({

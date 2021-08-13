@@ -76,22 +76,29 @@ app.post('/auth', (req, res) => {
         info += chunk
     })
     req.on('end', async () => {
-        let args = JSON.parse(info)
-        for (let i in instances) {
-            if (args.username == passwords[i].username && args.password == passwords[i].password) {
-                if (!instances[i].tokens) {
-                    instances[i].tokens = []
+        try {
+            let args = JSON.parse(info)
+            for (let i in instances) {
+                if (args.username == passwords[i].username && args.password == passwords[i].password) {
+                    if (!instances[i].tokens) {
+                        instances[i].tokens = []
+                    }
+                    let token = uuidv4()
+                    instances[i].tokens.push(token)
+                    res.cookie('token', token, {maxAge: 86400000 * 14})
+                    res.writeHead(200)
+                    res.end()
+                    return
                 }
-                let token = uuidv4()
-                instances[i].tokens.push(token)
-                res.cookie('token', token, {maxAge: 86400000 * 14})
-                res.writeHead(200)
-                res.end()
-                return
             }
+            res.writeHead(401, "Incorrect username or password")
+            res.end()
+        } catch (e) {
+            console.error("Found the following error:")
+            console.error(e)
+            res.writeHead(400, "Bad request")
+            res.end()
         }
-        res.writeHead(401, "Incorrect username or password")
-        res.end()
     })
 })
 
@@ -102,39 +109,75 @@ app.post('/signin', (req, res) => {
         info += chunk
     })
     req.on('end', async () => {
-        let args = JSON.parse(info)
-        let dbConnection = getDBConnectionFromName(req.cookies.shop)
-        if (!dbConnection) {
-            res.writeHead(400, "Invalid shop")
-            return
-        }
-        if (args.type == "swipe") {
-            try {
-                let toReturn = await dbConnection.userSwipe(args.id)
-                broadcastGuest(req.cookies.shop, args.id)
-                res.writeHead(200, { 'Content-Type': 'application/json' })
-                res.end(JSON.stringify({ status: "success", message: toReturn ? "Hello!" : "Goodbye!" }))
-            } catch (e) {
-                if (e.message == "New user") {
-                    res.writeHead(202, { 'Content-Type': 'application/json' })
-                    res.end(JSON.stringify({ status: 'error', message: 'Register' }))
-                } else {
+        try {
+            let args = JSON.parse(info)
+            let dbConnection = getDBConnectionFromName(req.cookies.shop)
+            if (!dbConnection) {
+                res.writeHead(400, "Invalid shop")
+                res.end()
+                return
+            }
+            if (args.type == "swipe") {
+                try {
+                    let toReturn = await dbConnection.userSwipe(args.id)
+                    broadcastGuest(req.cookies.shop, args.id)
+                    res.writeHead(200, { 'Content-Type': 'application/json' })
+                    res.end(JSON.stringify({ status: "success", message: toReturn ? "Hello!" : "Goodbye!" }))
+                } catch (e) {
+                    if (e.message == "New user") {
+                        res.writeHead(202, { 'Content-Type': 'application/json' })
+                        res.end(JSON.stringify({ status: 'error', message: 'Register' }))
+                    } else {
+                        console.error(e)
+                        res.writeHead(400, { 'Content-Type': 'application/json' })
+                        res.end(JSON.stringify({ status: "error", message: e.toString() }))
+                    }
+                }
+            } else if (args.type == "register") {
+                try {
+                    await dbConnection.createUser(args.id, args.name, args.email, true)
+                    broadcastGuest(req.cookies.shop, args.id)
+                    res.writeHead(200, { 'Content-Type': 'application/json' })
+                    res.end(JSON.stringify({ status: "success", message: "Registered and logged in" }))
+                } catch (e) {
                     console.error(e)
                     res.writeHead(400, { 'Content-Type': 'application/json' })
                     res.end(JSON.stringify({ status: "error", message: e.toString() }))
                 }
             }
-        } else if (args.type == "register") {
-            try {
-                await dbConnection.createUser(args.id, args.name, args.email, true)
-                broadcastGuest(req.cookies.shop, args.id)
-                res.writeHead(200, { 'Content-Type': 'application/json' })
-                res.end(JSON.stringify({ status: "success", message: "Registered and logged in" }))
-            } catch (e) {
-                console.error(e)
-                res.writeHead(400, { 'Content-Type': 'application/json' })
-                res.end(JSON.stringify({ status: "error", message: e.toString() }))
+        } catch (e) {
+            console.error("Caught the following error:")
+            console.error(e)
+            res.writeHead(400, "Bad Request")
+            res.end()
+        }
+    })
+})
+
+//Get information on user
+app.post('/guest', (req, res) => {
+    let info = ""
+    req.on("data", (chunk) => {
+        info += chunk
+    })
+    req.on('end', async () => {
+        try {
+            let args = JSON.parse(info)
+            let dbConnection = getDBConnectionFromName(req.cookies.shop)
+            if (!dbConnection) {
+                res.writeHead(400, "Invalid credentials")
+                res.end()
+                return
             }
+            let guest = await dbConnection.getUser(args.user)
+            guest.history = await dbConnection.getHistory(args.user)
+            res.writeHead(200, { 'Content-Type': 'application/json' })
+            res.end(JSON.stringify(guest))
+        } catch (e) {
+            console.error("Caught the following error:")
+            console.error(e)
+            res.writeHead(400, "Bad Request")
+            res.end()
         }
     })
 })
@@ -245,7 +288,6 @@ async function broadcastGuest(name, id) {
             client.send(JSON.stringify(toSend))
         }
     })
-    if (!userData.here) return
     let historyData = await dbConnection.getHistory(id)
     toSend = {
         type: "history",

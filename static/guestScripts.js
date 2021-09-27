@@ -7,6 +7,7 @@ function signIn(id) {
             if (xhr.status == 202) {
                 showRegistration(id)
             } else if (xhr.status == 200) {
+                $("#signInText").text(data.message === "Hello!" ? "Welcome back!" : "Goodbye!")
                 window.scrollTo({left: window.innerWidth * 3, top: 0, behavior: "smooth"})
                 setTimeout(showHome, 2000)
             } else {
@@ -30,6 +31,11 @@ function showRegistration(id) {
 }
 
 function register() {
+    if (!(
+        $("#IDInput").val() &&
+        $("#NameInput").val() &&
+        $("#EmailInput").val()
+    )) return false
     $.post("/signin", JSON.stringify({
         type: "register",
         id: $("#IDInput").val(),
@@ -41,12 +47,18 @@ function register() {
             console.log(status)
             console.log(xhr)
             if (data.message == "Registered and logged in") {
-                window.scrollTo({left: 0, top: 0, behavior: "smooth"})
-                setTimeout(showHome, 4000)
+                console.log("Hey we registered")
+                $("#signInText").text("Welcome!")
+                window.scrollTo({left: window.innerWidth * 3, top: 0, behavior: "smooth"})
+                setTimeout(showHome, 2000)
             }
-            $("#IDInput").val("")
-            $("#NameInput").val("")
-            $("#EmailInput").val("")
+            setTimeout(() => {
+                $("#IDInput").val("")
+                $("#NameInput").val("")
+                $("#EmailInput").val("")
+                $("#registrationForm")[0].reset()
+                $("#registrationForm").removeClass("was-validated")
+            }, 2000)
         })
         .fail((data, status, xhr) => {
             console.error(data)
@@ -54,6 +66,7 @@ function register() {
             console.error(xhr)
         }
     )
+    return false
 }
 
 function showHome() {
@@ -75,5 +88,20 @@ $(document).ready(() => {
         }
     })
     $("#swipeArea").focus()
+    
+    https://getbootstrap.com/docs/5.0/forms/validation/
+    // Fetch all the forms we want to apply custom Bootstrap validation styles to
+    var forms = document.querySelectorAll('.needs-validation')
+    
+    // Loop over them and prevent submission
+    Array.prototype.slice.call(forms)
+        .forEach(function (form) {
+        form.addEventListener('submit', function (event) {
+            event.preventDefault()
+            event.stopPropagation()
+    
+            form.classList.add('was-validated')
+        }, false)
+        })
     window.scrollTo({left: window.innerWidth * 2, top: 0, behavior: "instant"})
 })

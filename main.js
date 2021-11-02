@@ -51,7 +51,7 @@ function getNameFromAuth(secret) {
 //Static HTML pages
 app.get('/guests', (req, res) => {
     res.cookie('shop', 'fabLab')
-    res.sendFile(path.join(__dirname, '/static/guestView.html'))
+    res.sendFile(path.join(__dirname, '/static/guestViewNew.html'))
 })
 
 app.get('/guestsTest', (req, res) => {
@@ -314,5 +314,28 @@ async function broadcastTasks(name) {
         }
     })
 }
+
+function checkCerts() {
+    for (let i in instances) {
+        console.log("Checking certifications for instance", i)
+        getDBConnectionFromName(i).checkCerts(instances[i].certs).then(async (changed) => {
+            if (changed) {
+                console.log("Broadcasting that there was a change")
+                let status = await getDBConnectionFromName(i).getStatus()
+                let toSend = {
+                    type: "guestList",
+                    data: status
+                }
+                WSS.clients.forEach((client) => {
+                    if (client.readyState === WS.OPEN && getNameFromAuth(client.secret) == i) {
+                        client.send(JSON.stringify(toSend))
+                    }
+                })
+            }
+        }).catch(console.error)
+    }
+}
+
+setInterval(checkCerts, 10 /** 60*/ * 1000)
 
 console.log(`Listening on port ${port}!`)

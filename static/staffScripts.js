@@ -75,7 +75,9 @@ function rebuildGuests(newList) {
                 let newElement = generateRow(newList[i])
                 newElement.insertAfter(guests[newList[i].guest_id].dataRow)
                 guests[newList[i].guest_id].dataRow.remove()
-                guests[guest.guest_id] = guest
+                let oldHistory = guests[newList[i].guest_id].history
+                guests[newList[i].guest_id] = newList[i]
+                guests[newList[i].guest_id].history = oldHistory
                 guests[newList[i].guest_id].dataRow = newElement
             }
         } else {

@@ -12,14 +12,31 @@
     <nav class="navbar-dark">
         <div class="nav nav-tabs mt-2" id="nav-tab" role="tablist">
             <button class="nav-link active text-light ms-2" id="nav-guests-tab" data-bs-toggle="tab" data-bs-target="#nav-guests" type="button" role="tab" aria-controls="nav-guests" aria-selected="true">Guests</button>
-            <button class="nav-link text-light me-2" id="nav-tasks-tab" data-bs-toggle="tab" data-bs-target="#nav-tasks" type="button" role="tab" aria-controls="nav-tasks" aria-selected="false">Tasks</button>
+            <button class="nav-link text-light" id="nav-directory-tab" data-bs-toggle="tab" data-bs-target="#nav-directory" type="button" role="tab" aria-controls="nav-directory" aria-selected="false">Directory</button>
+            <button class="nav-link text-light" id="nav-tasks-tab" data-bs-toggle="tab" data-bs-target="#nav-tasks" type="button" role="tab" aria-controls="nav-tasks" aria-selected="false">Tasks</button>
+            <button class="nav-link text-light me-2" id="nav-checkouts-tab" data-bs-toggle="tab" data-bs-target="#nav-checkouts" type="button" role="tab" aria-controls="nav-checkouts" aria-selected="false">Check-Out</button>
         </div>
     </nav>
     <div class="tab-content" id="nav-tabContent">
         <div class="tab-pane fade show active p5" id="nav-guests" role="tabpanel" aria-labelledby="nav-guests-tab">
             <table class="table table-striped table-dark table-hover w-100" id="guestsTable">
-                </tr>
+                <tr>
                     <th id="nameLabel">   
+                        Name
+                    </th>
+                    <th>
+                        Certifications
+                    </th>
+                    <th>   
+                        Notes
+                    </th>
+                </tr>
+            </table>
+        </div>
+        <div class="tab-pane fade" id="nav-directory" role="tabpanel" aria-labelledby="nav-directory-tab">
+            <table class="table table-striped table-dark table-hover w-100" id="directoryTable">
+                <tr>
+                    <th id="nameLabel">
                         Name
                     </th>
                     <th>

@@ -177,10 +177,27 @@ function swipeGuest(guest) {
             guests[guest.guest_id].dataRow.remove()
             delete guests[guest.guest_id]
         } else {
-            console.log("Someone left, but they were already here!")
+            console.log("Someone left, but they were already gone!")
             console.log(guest)
         }
     }
+}
+
+function swipeOutGuest() {
+    console.log("Signing out user")
+    $.post("/signin", JSON.stringify({ type: "swipe", id: shown.guest_id })).done((data, status, xhr) => {
+        console.log(data)
+        console.log(status)
+        console.log(xhr)
+        if (xhr.status != 200) {
+            console.error(xhr.status)
+        }
+    })
+    .fail((data, status, xhr) => {
+        console.error(data)
+        console.error(status)
+        console.error(xhr)
+    })
 }
 
 async function loadModal(guest) {

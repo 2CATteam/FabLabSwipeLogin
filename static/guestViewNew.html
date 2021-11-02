@@ -24,16 +24,19 @@
                     <hr/>
                     <p class="labelText" style="font-size: 24px;">Hey you! Looks like you're new here!
                         <strong>Please fill out the following:</strong></p>
-                    <label class="labelText" style="font-size: 28px; font-weight: bold;" for="IDInput">ID number</label>
-                    <input id="IDInput" class="form-control form-control-lg mb-3" type="text" placeholder="Swipe or type ID #">
-                    <label class="labelText" style="font-size: 28px; font-weight: bold;" for="NameInput">Name</label>
-                    <input id="NameInput" class="form-control form-control-lg mb-3" type="text" placeholder="Brandt Smith">
-                    <label class="labelText" style="font-size: 28px; font-weight: bold;" for="EmailInput">Email</label>
-                    <input id="EmailInput" class="form-control form-control-lg mb-3" type="text" placeholder="example@ou.edu">
-                    <div style="display: flex; justify-content: space-around;">
-                        <button class="btn btn-lg btn-secondary buttonText" onclick="showHome()">Cancel</button>
-                        <button class="btn btn-lg btn-primary buttonText" style="background-color: #535AFF;" onclick="register()">Submit</button>
-                    </div>
+                    <form class="needs-validation" id="registrationForm" novalidate>
+                        <label class="labelText" style="font-size: 28px; font-weight: bold;" for="IDInput">ID number</label>
+                        <input id="IDInput" class="form-control form-control-lg mb-3" type="text" placeholder="Swipe or type ID #" required>
+                        <div class="invalid-feedback">Invalid ID</div>
+                        <label class="labelText" style="font-size: 28px; font-weight: bold;" for="NameInput">Name</label>
+                        <input id="NameInput" class="form-control form-control-lg mb-3" type="text" placeholder="Brandt Smith" required>
+                        <label class="labelText" style="font-size: 28px; font-weight: bold;" for="EmailInput">Email</label>
+                        <input id="EmailInput" class="form-control form-control-lg mb-3" type="text" placeholder="example@ou.edu" required>
+                        <div style="display: flex; justify-content: space-around;">
+                            <button class="btn btn-lg btn-secondary buttonText" id="registrationCancel" onclick="showHome()">Cancel</button>
+                            <button class="btn btn-lg btn-primary buttonText" id="registrationSubmit" style="background-color: #535AFF;" onclick="register()">Submit</button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
@@ -71,7 +74,7 @@
         </div>
         <div id="welcomeDiv" class="guestBg">
             <div class="centerFlex">
-                <h5 class="signInText">Welcome Back!</h5>
+                <h5 class="signInText" id="signInText">Welcome Back!</h5>
             </div>
         </div>
     </div>

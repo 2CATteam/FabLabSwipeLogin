@@ -123,6 +123,7 @@ app.post('/signin', (req, res) => {
                     broadcastGuest(req.cookies.shop, args.id)
                     res.writeHead(200, { 'Content-Type': 'application/json' })
                     res.end(JSON.stringify({ status: "success", message: toReturn ? "Hello!" : "Goodbye!" }))
+                    checkCertsForInstance(req.cookies.shop)
                 } catch (e) {
                     if (e.message == "New user") {
                         res.writeHead(202, { 'Content-Type': 'application/json' })

@@ -107,7 +107,7 @@ function generateRow(guest) {
     let toRemove = []
     for (let i in certs) {
         let html = `<div class="certBox me-2" style="opacity: ${guest.certs & (1 << certs[i].id) ? "1" : "0"};">
-            <div class="w-100 h-100" style="background-color: ${certs[i].color ?? "#FFFFFF"}" ${guest.certs & (1 << certs[i].id) ? 'data-bs-toggle="tooltip"' : ""} data-bs-placement="top" title="${certs[i].name}"></div>
+            <div class="w-100 h-100" style="background-color: ${certs[i].color ? certs[i].color : "#FFFFFF"}" ${guest.certs & (1 << certs[i].id) ? 'data-bs-toggle="tooltip"' : ""} data-bs-placement="top" title="${certs[i].name}"></div>
         </div>`
         certDoms.push(html)
         toRemove.push(0)
@@ -228,7 +228,7 @@ async function loadModal(guest) {
                 <input readonly onclick="return false;" type="checkbox" ${lacks ? "" : "checked"}>
             </td>
             <td>
-                <button class="btn ${lacks ? "btn-primary" : "btn-danger"}" onclick="addRemoveCert(${guest}, ${i})">${lacks ? "Grant" : "Revoke"}</button>
+                <button class="btn ${lacks ? "btn-primary" : "btn-danger"}" onclick="addRemoveCert('${guest}', ${i})">${lacks ? "Grant" : "Revoke"}</button>
             </td>
         </tr>`
         $("#certTable").append($(html))

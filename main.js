@@ -139,6 +139,7 @@ app.post('/signin', (req, res) => {
                     broadcastGuest(req.cookies.shop, args.id)
                     res.writeHead(200, { 'Content-Type': 'application/json' })
                     res.end(JSON.stringify({ status: "success", message: "Registered and logged in" }))
+                    checkCertsForInstance(req.cookies.shop)
                 } catch (e) {
                     console.error(e)
                     res.writeHead(400, { 'Content-Type': 'application/json' })
@@ -334,6 +335,25 @@ function checkCerts() {
             }
         }).catch(console.error)
     }
+}
+
+function checkCertsForInstance(i) {
+    console.log("Checking certifications for instance", i)
+    getDBConnectionFromName(i).checkCerts(instances[i].certs).then(async (changed) => {
+        if (changed) {
+            console.log("Broadcasting that there was a change")
+            let status = await getDBConnectionFromName(i).getStatus()
+            let toSend = {
+                type: "guestList",
+                data: status
+            }
+            WSS.clients.forEach((client) => {
+                if (client.readyState === WS.OPEN && getNameFromAuth(client.secret) == i) {
+                    client.send(JSON.stringify(toSend))
+                }
+            })
+        }
+    }).catch(console.error)
 }
 
 setInterval(checkCerts, 10 /** 60*/ * 1000)

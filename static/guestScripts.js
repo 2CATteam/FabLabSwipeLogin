@@ -80,8 +80,9 @@ $(document).ready(() => {
             let data = $("#swipeArea").val()
             console.log(data)
             $("#swipeArea").val("")
-            if (data.match(/^;\d{15,16}\?$/)) {
-                data = data.substring(6, 15)
+            let match = data.match(/;(\d{15,16})\??/)
+            if (match) {
+                data = match[1].substring(5, 14)
             }
             signIn(data)
             console.log(data)

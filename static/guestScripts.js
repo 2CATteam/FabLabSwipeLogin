@@ -43,6 +43,7 @@ function register() {
         email: $("#EmailInput").val()
     }))
         .done((data, status, xhr) => {
+            console.log("Registration finished, maybe not failed")
             console.log(data)
             console.log(status)
             console.log(xhr)
@@ -61,6 +62,7 @@ function register() {
             }, 2000)
         })
         .fail((data, status, xhr) => {
+            console.error("Registration failed")
             console.error(data)
             console.error(status)
             console.error(xhr)

@@ -86,6 +86,7 @@ app.post('/auth', (req, res) => {
                     let token = uuidv4()
                     instances[i].tokens.push(token)
                     res.cookie('token', token, {maxAge: 86400000 * 14})
+                    res.cookie('shop', i, {maxAge: 86400000 * 14})
                     res.writeHead(200)
                     res.end()
                     return

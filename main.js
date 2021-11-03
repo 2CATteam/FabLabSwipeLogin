@@ -358,6 +358,6 @@ function checkCertsForInstance(i) {
     }).catch(console.error)
 }
 
-setInterval(checkCerts, 10 * 60 * 1000)
+setInterval(checkCerts, 5 * 60 * 1000)
 
 console.log(`Listening on port ${port}!`)

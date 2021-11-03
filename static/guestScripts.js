@@ -103,6 +103,8 @@ $(document).ready(() => {
                 event.preventDefault()
                 if (!form.checkValidity()) {
                     event.stopPropagation()
+                } else {
+                    register()
                 }
         
                 form.classList.add('was-validated')

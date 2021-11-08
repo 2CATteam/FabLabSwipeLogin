@@ -37,7 +37,11 @@ function register() {
             console.error(data)
             console.error(status)
             console.error(xhr)
-            alert("Registration failed, please check your input and try again")
+            if (data.responseJSON.message == "User already exists") {
+                alert("Looks like you're already registered. If you're not in the Shop Fundamentals Canvas course already, please email us at fablab@ou.edu")
+            } else {
+                alert("Registration failed, please check your input and try again")
+            }
         }
     )
     return false

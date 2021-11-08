@@ -65,6 +65,11 @@ app.get('/guestsTest', (req, res) => {
     res.sendFile(path.join(__dirname, '/static/guestViewNew.html'))
 })
 
+app.get('/enroll/:shop', (req, res) => {
+    res.cookie('shop', req.params.shop)
+    res.sendFile(path.join(__dirname, '/static/enrollView.html'))
+})
+
 app.get('/staff', (req, res) => {
     for (let i in instances) {
         if (instances[i].tokens?.includes(req.cookies?.token)) {
@@ -160,7 +165,7 @@ app.post('/signin', (req, res) => {
             } else if (args.type == "register") {
                 try {
                     //Make the user and broadcast it
-                    await dbConnection.createUser(args.id, args.name, args.email, true)
+                    await dbConnection.createUser(args.id, args.name, args.email, args.signin ?? true)
                     broadcastGuest(req.cookies.shop, args.id)
                     //Send 200
                     res.writeHead(200, { 'Content-Type': 'application/json' })

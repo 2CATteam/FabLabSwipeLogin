@@ -69,17 +69,7 @@ function getNameFromAuth(secret) {
     return null
 }
 
-//Static HTML pages
-app.get('/guests', (req, res) => {
-    res.cookie('shop', 'fabLab')
-    res.sendFile(path.join(__dirname, '/static/guestViewNew.html'))
-})
-
-app.get('/guestsTest', (req, res) => {
-    res.cookie('shop', 'test')
-    res.sendFile(path.join(__dirname, '/static/guestViewNew.html'))
-})
-
+//Static HTML pages for enrollment and staff
 app.get('/enroll/:shop', (req, res) => {
     res.cookie('shop', req.params.shop)
     res.sendFile(path.join(__dirname, '/static/enrollView.html'))
@@ -236,20 +226,61 @@ app.post('/guest', (req, res) => {
     })
 })
 
-//Oh this one is actually important
-//This one gets data for a given quiz on Canvas, and then uses that to render a webpage that mimics that quiz
-//The server-side rendering tool is named Pug. At the time I'm writing this comment, I don't know how it works but it's neat conceptually
-app.get('/quiz/:quiz', (req, res) => {
-    canvasTools.getQuizData(req.params.quiz).then((data) => {
-        res.render("quizTemplate.pug", {data: data})
-    }).catch((err) => {
-        console.error(err)
-        res.writeHead(500)
-        res.end()
-    })
-})
+//Make routing trees for each instance
+for (let i in instances) {
+    //Make the new router
+    let router = express.Router()
 
-app.post('/quiz/:quiz/submit', (req, res) => {
+    //The root for this router should direct users to a directory of cert quizzes
+    router.get('/', (req, res) => {
+        //Dynamically renders a list of quizzes server-side. Pug is a cool library
+        res.render("quizDirectory.pug", {data: instances[i].certs})
+    })
+
+    //Convenience path to access the staff page. Same as previous, but in this router
+    router.get('/staff', (req, res) => {
+        for (let i in instances) {
+            if (instances[i].tokens?.includes(req.cookies?.token)) {
+                res.sendFile(path.join(__dirname, '/static/staffView.html'))
+                return
+            }
+        }
+        res.sendFile(path.join(__dirname, '/static/loginView.html'))
+    })
+
+    //Path to guest page
+    router.get('/guests', (req, res) => {
+        res.cookie('shop', i)
+        res.sendFile(path.join(__dirname, '/static/guestViewNew.html'))
+    })
+
+    //Path to link to enroll
+    router.get('/enroll', (req, res) => {
+        res.cookie('shop', i)
+        res.sendFile(path.join(__dirname, '/static/enrollView.html'))
+    })
+
+    //Add quiz pages for each certification with a quizId defined
+    for (let j in instances[i].certs) {
+        //Add path for this quiz
+        router.get(`/${instances[i].certs[j].name.replace(/\W/g, '')}`, (req, res) => {
+            //Using Pug (a cool library I just learned), render an HTML page representing the Canvas quiz, and send it to the client
+            canvasTools.getQuizData(instances[i].certs[j].quizId).then((data) => {
+                res.render("quizTemplate.pug", {data: data})
+            }).catch((err) => {
+                //Error handling
+                console.error(err)
+                res.writeHead(500, "Bad request")
+                res.end()
+            })
+        })
+    }
+
+    //Tell it to actually use the router as part of this subpath
+    app.use(`/${i}`, router)
+}
+
+app.post('/quiz/:quiz(\\d+)/submit', (req, res) => {
     //Get args
     let info = ""
     req.on("data", (chunk) => {
@@ -257,19 +288,53 @@ app.post('/quiz/:quiz/submit', (req, res) => {
     })
     req.on('end', async () => {
         try {
-            //Parse args, run add step
+            //Parse args
             let args = JSON.parse(info)
+            //Tracks whether the email was found in any instance
+            let found = false
+            //Searches each instance
             for (let i in instances) {
+                //Keeps track of who has had changes
+                let toBroadcast = null
+                //Finds the matching certification to this quiz
                 for (let j in instances[i].certs) {
                     if (instances[i].certs[j].quizId == req.params.quiz) {
-                        await instances[i].dbConnection.altAddCert(args.email, instances[i].certs[j].id)
+                        try {
+                            //Call the DB method to search for the email and add a cert. Returns an array of users who have had changes
+                            let changed = await instances[i].dbConnection.altAddCert(args.email, instances[i].certs[j].id)
+                            found = true
+                            if (changed) {
+                                toBroadcast = changed
+                            }
+                            //Catch errors. If the error is that the user couldn't be found, nothing needs to happen.
+                        } catch (e) {
+                            if (e !== "No such user") {
+                                console.error("Caught the following error:")
+                                console.error(e)
+                                res.writeHead(400, "Bad Request")
+                                res.end()
+                                return
+                            }
+                        }
                     }
                 }
+                //Broadcast guests if needed
+                for (let j in toBroadcast) {
+                    await broadcastGuest(i, toBroadcast[j])
+                }
             }
+            //If we didn't find anyone with that username, send back an error
+            if (!found) {
+                res.writeHead(400, "Bad Request")
+                res.end("No such user")
+                return
+            }
+            //Otherwise, success!
             res.writeHead(200, "Success")
             res.end()
         } catch (e) {
-            onsole.error("Caught the following error:")
+            //Error handling
+            console.error("Caught the following error:")
             console.error(e)
             res.writeHead(400, "Bad Request")
             res.end()

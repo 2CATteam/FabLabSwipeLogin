@@ -85,20 +85,6 @@ app.get('/enroll/:shop', (req, res) => {
     res.sendFile(path.join(__dirname, '/static/enrollView.html'))
 })
 
-//Oh this one is actually important
-//This one gets data for a given quiz on Canvas, and then uses that to render a webpage that mimics that quiz
-//The server-side rendering tool is named Pug. At the time I'm writing this comment, I don't know how it works but it's neat conceptually
-app.get('/quiz/:quiz', (req, res) => {
-    canvasTools.getQuizData(req.params.quiz).then((data) => {
-        console.log(data)
-        res.render("quizTemplate.pug", {data: data})
-    }).catch((err) => {
-        console.error(err)
-        res.writeHead(500)
-        res.end()
-    })
-})
-
 app.get('/staff', (req, res) => {
     for (let i in instances) {
         if (instances[i].tokens?.includes(req.cookies?.token)) {
@@ -243,6 +229,47 @@ app.post('/guest', (req, res) => {
             res.end(JSON.stringify(guest))
         } catch (e) {
             console.error("Caught the following error:")
+            console.error(e)
+            res.writeHead(400, "Bad Request")
+            res.end()
+        }
+    })
+})
+
+//Oh this one is actually important
+//This one gets data for a given quiz on Canvas, and then uses that to render a webpage that mimics that quiz
+//The server-side rendering tool is named Pug. At the time I'm writing this comment, I don't know how it works but it's neat conceptually
+app.get('/quiz/:quiz', (req, res) => {
+    canvasTools.getQuizData(req.params.quiz).then((data) => {
+        res.render("quizTemplate.pug", {data: data})
+    }).catch((err) => {
+        console.error(err)
+        res.writeHead(500)
+        res.end()
+    })
+})
+
+app.post('/quiz/:quiz/submit', (req, res) => {
+    //Get args
+    let info = ""
+    req.on("data", (chunk) => {
+        info += chunk
+    })
+    req.on('end', async () => {
+        try {
+            //Parse args, run add step
+            let args = JSON.parse(info)
+            for (let i in instances) {
+                for (let j in instances[i].certs) {
+                    if (instances[i].certs[j].quizId == req.params.quiz) {
+                        await instances[i].dbConnection.altAddCert(args.email, instances[i].certs[j].id)
+                    }
+                }
+            }
+            res.writeHead(200, "Success")
+            res.end()
+        } catch (e) {
+            onsole.error("Caught the following error:")
             console.error(e)
             res.writeHead(400, "Bad Request")
             res.end()

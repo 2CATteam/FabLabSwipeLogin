@@ -182,9 +182,9 @@ class DBTools {
             toEnroll.pop()
             for (let i in toEnroll) {
                 try {
-                    let canvasId = await enrollUser(toEnroll[i]["Sooner ID"], toEnroll[i]["Email Address"], toEnroll[i]["First Name"] + toEnroll[i]["Last Name"])
-                    this.db.run("UPDATE guests SET canvas_id = ? WHERE guest_id = ?", canvasId, rows[i].guest_id, (err) => {
+                    this.db.run("UPDATE guests SET name = ? WHERE guest_id = ?", toEnroll[i]["First Name"] + " " + toEnroll[i]["Last Name"], toEnroll[i]["Sooner ID"], (err) => {
                         if (err) console.error(err)
+			console.log("Fixed guest", toEnroll[i]["Sooner ID"])
                     })
                 } catch (e) {
                     console.error("Non-OU student assumed:")

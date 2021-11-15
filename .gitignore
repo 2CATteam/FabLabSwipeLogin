@@ -2,3 +2,4 @@ node_modules/
 *.db
 lib/passwords.js
 lib/canvasInfo.js
+lib/emailAuth.js

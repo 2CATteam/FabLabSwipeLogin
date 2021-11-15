@@ -1,6 +1,6 @@
 //Require stack
 var sqlite = require('sqlite3');
-const instances = require('./instances.js')
+const instances = require('../lib/instances.js')
 const fs = require('fs');
 
 //Basically just copied from dbtools

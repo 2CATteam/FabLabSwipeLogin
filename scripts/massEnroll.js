@@ -1,5 +1,4 @@
-const canvasInfo = require("./canvasInfo.js")
-const instances = require("./instances.js")
+const canvasInfo = require("../lib/canvasInfo.js")
 const axios = require('axios')
 var sqlite = require('sqlite3');
 let fs = require('fs')

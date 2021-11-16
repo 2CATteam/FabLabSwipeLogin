@@ -236,7 +236,7 @@ for (let i in instances) {
     //The root for this router should direct users to a directory of cert quizzes
     router.get('/', (req, res) => {
         //Dynamically renders a list of quizzes server-side. Pug is a cool library
-        res.render("quizDirectory.pug", {data: instances[i].certs})
+        res.render("quizDirectory.pug", {data: instances[i].certs, shopName: i})
     })
 
     //Convenience path to access the staff page. Same as previous, but in this router
@@ -268,7 +268,7 @@ for (let i in instances) {
         router.get(`/${instances[i].certs[j].name.replace(/\W/g, '')}`, (req, res) => {
             //Using Pug (a cool library I just learned), render an HTML page representing the Canvas quiz, and send it to the client
             canvasTools.getQuizData(instances[i].certs[j].quizId).then((data) => {
-                res.render("quizTemplate.pug", {data: data, shopName: i})
+                res.render("quizTemplate.pug", {data: data})
             }).catch((err) => {
                 //Error handling
                 console.error(err)

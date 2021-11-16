@@ -502,7 +502,7 @@ function markNotes(user) {
             //For notes, add it to the notes array
             case history_types.FIRST_VISIT:
                 if (!notes.notes) notes.notes = []
-                notes.notes.push(guests[user].history[i].note)
+                notes.notes.push("This is this user's first time visiting!")
                 break
             case history_types.NOTE:
                 if (!notes.notes) notes.notes = []

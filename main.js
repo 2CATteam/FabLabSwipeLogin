@@ -183,6 +183,7 @@ app.post('/signin', (req, res) => {
                     console.error(e)
                     res.writeHead(400, { 'Content-Type': 'application/json' })
                     res.end(JSON.stringify({ status: "error", message: e.toString() }))
+                    return
                 }
             }
         } catch (e) {
@@ -191,6 +192,7 @@ app.post('/signin', (req, res) => {
             console.error(e)
             res.writeHead(400, "Bad Request")
             res.end()
+            return
         }
     })
 })

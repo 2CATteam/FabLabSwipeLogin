@@ -500,6 +500,10 @@ function markNotes(user) {
         //Type router
         switch (guests[user].history[i].type) {
             //For notes, add it to the notes array
+            case history_types.FIRST_VISIT:
+                if (!notes.notes) notes.notes = []
+                notes.notes.push(guests[user].history[i].note)
+                break
             case history_types.NOTE:
                 if (!notes.notes) notes.notes = []
                 notes.notes.push(guests[user].history[i].note)

@@ -61,7 +61,7 @@ function register() {
             if (data.message == "Registered and logged in") {
                 console.log("Hey we registered")
                 $("#signInText").text("Welcome!")
-                window.scrollTo({left: window.innerWidth * 3, top: 0, behavior: "smooth"})
+                window.scrollTo({left: 0, top: 0, behavior: "smooth"})
                 setTimeout(showHome, 2000)
             }
             //After two seconds, remove validation and clear values

@@ -22,3 +22,5 @@ html
                             li.list-group-item
                                 //Assemble the proper link elements
                                 a(href= "/" + shopName + "/" + cert.name.replace(/\W/g, ''))= cert.name
+                                if cert.description 
+                                    p= cert.description

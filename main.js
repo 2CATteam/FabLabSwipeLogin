@@ -550,10 +550,20 @@ function checkCertsForInstance(i) {
 }
 
 //Sign people out at night
-let job = schedule.scheduleJob('30 3 * * *', () => {
+let job = schedule.scheduleJob('30 3 * * *', async () => {
     try {
         for (let i in instances) {
-            instances[i].dbConnection.signAllOut()
+            await instances[i].dbConnection.signAllOut()
+            let status = await instances[i].dbConnection.getStatus()
+            let toSend = {
+                type: "guestList",
+                data: status
+            }
+            WSS.clients.forEach((client) => {
+                if (client.readyState === WS.OPEN && getNameFromAuth(client.secret) == i) {
+                    client.send(JSON.stringify(toSend))
+                }
+            })
         }
     } catch (e) {
         console.error("Error signing people out:")

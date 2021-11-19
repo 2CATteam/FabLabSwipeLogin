@@ -45,6 +45,10 @@ function register() {
         $("#NameInput").val() &&
         $("#EmailInput").val()
     )) return false
+    if (!($("#EmailInput").val().includes("@"))) {
+        $("#EmailInput")[0].setCustomValidity("is-invalid")
+        return
+    }
     //Send to the endpoint
     $.post("/signin", JSON.stringify({
         type: "register",
@@ -111,7 +115,7 @@ $(document).ready(() => {
     //Start focusing on the Swipe Area
     $("#swipeArea").focus()
     
-    https://getbootstrap.com/docs/5.0/forms/validation/
+    // https://getbootstrap.com/docs/5.0/forms/validation/
     // Fetch all the forms we want to apply custom Bootstrap validation styles to
     var forms = document.querySelectorAll('.needs-validation')
     
@@ -119,6 +123,7 @@ $(document).ready(() => {
     Array.prototype.slice.call(forms)
         .forEach(function (form) {
             form.addEventListener('submit', function (event) {
+                $("#EmailInput")[0].setCustomValidity("")
                 event.preventDefault()
                 if (!form.checkValidity()) {
                     event.stopPropagation()

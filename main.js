@@ -7,6 +7,7 @@ const WS = require('ws')
 const port = 4000
 const favicon = require('serve-favicon');
 const {v4: uuidv4} = require('uuid')
+const schedule = require('node-schedule');
 var instances = require("./lib/instances.js")
 const passwords = require("./lib/passwords.js")
 const dbTools = require("./lib/databaseTools.js")
@@ -547,6 +548,18 @@ function checkCertsForInstance(i) {
         }
     }).catch(console.error)
 }
+
+//Sign people out at night
+let job = schedule.scheduleJob('30 3 * * *', () => {
+    try {
+        for (let i in instances) {
+            instances[i].dbConnection.signAllOut()
+        }
+    } catch (e) {
+        console.error("Error signing people out:")
+        console.error(e)
+    }
+})
 
 //Check certifications every now and then
 setInterval(checkCerts, 5 * 60 * 1000)

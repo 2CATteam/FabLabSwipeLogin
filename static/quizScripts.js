@@ -68,7 +68,7 @@ function submit() {
         }).fail((dat, status, xhr) => {
             //Handle the case where the email doesn't match anyone
             if (dat.responseText == "No such user") {
-                alert("That email does not match any current account. Please check your email and try again.")
+                alert("That email does not match any current account. Please check that you've registered and that your email matches.")
                 return
             }
             //Handle other cases

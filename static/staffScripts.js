@@ -39,11 +39,14 @@ function openSocket() {
             case "guestList":
                 rebuildGuests(obj.data)
                 break
+            //TODO: Add a "cacheList" option that will be sent like guestList
             //If given one guest, swipe them in/out
+            //This will also handle adding them to the Directory cache
             case "guest":
                 swipeGuest(obj.data)
                 break
             //Add history for a single user
+            //TODO: Also have this consider directory stuff
             case "history":
                 console.log("Got user history")
                 //Make string objects into actual date objects
@@ -200,6 +203,7 @@ function generateRow(guest) {
 }
 
 //Function for when we get a message that a guest has either come or gone
+//TODO: This needs to also add to the directory cache
 function swipeGuest(guest) {
     //If the new guest is signing IN rather than out
     if (guest.here) {

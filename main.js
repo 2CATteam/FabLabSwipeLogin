@@ -209,7 +209,7 @@ app.post('/guest', (req, res) => {
         try {
             //Parse args, get db
             let args = JSON.parse(info)
-            let dbConnection = getDBConnectionFromName(req.cookies.shop)
+            let dbConnection = getDBConnection(req.cookies.token)
             if (!dbConnection) {
                 res.writeHead(400, "Invalid credentials")
                 res.end()
@@ -220,6 +220,39 @@ app.post('/guest', (req, res) => {
             guest.history = await dbConnection.getHistory(args.user)
             res.writeHead(200, { 'Content-Type': 'application/json' })
             res.end(JSON.stringify(guest))
+        } catch (e) {
+            console.error("Caught the following error:")
+            console.error(e)
+            res.writeHead(400, "Bad Request")
+            res.end()
+        }
+    })
+})
+
+//Search for users
+app.post('/search', (req, res) => {
+    //Get args
+    let info = ""
+    req.on("data", (chunk) => {
+        info += chunk
+    })
+    req.on('end', async () => {
+        try {
+            //Parse args, get db
+            let args = JSON.parse(info)
+            let dbConnection = getDBConnection(req.cookies.token)
+            if (!dbConnection) {
+                res.writeHead(400, "Invalid credentials")
+                res.end()
+                return
+            }
+            //Get the guest information and send it
+            let guests = await dbConnection.search(args.id, args.name, args.email)
+            for (let i in guests) {
+                guests[i].history = await dbConnection.getHistory(guests[i].guest_id)   
+            }
+            res.writeHead(200, { 'Content-Type': 'application/json' })
+            res.end(JSON.stringify(guests))
         } catch (e) {
             console.error("Caught the following error:")
             console.error(e)
@@ -438,12 +471,29 @@ async function onAuth(ws) {
     }
     ws.send(JSON.stringify(toSend))
 
+    //Send cache information
+    let cache = await dbConnection.getCache()
+    toSend = {
+        type: "cacheList",
+        data: cache
+    }
+    ws.send(JSON.stringify(toSend))
+
     //Send history information for each user
     for (var i in status) {
         let history = await dbConnection.getHistory(status[i].guest_id)
         toSend = {
             type: "history",
             user: status[i].guest_id,
+            data: history
+        }
+        ws.send(JSON.stringify(toSend))
+    }
+    for (var i in cache) {
+        let history = await dbConnection.getHistory(cache[i].guest_id)
+        toSend = {
+            type: "history",
+            user: cache[i].guest_id,
             data: history
         }
         ws.send(JSON.stringify(toSend))

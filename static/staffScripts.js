@@ -1,5 +1,7 @@
 //Global variables. Great code hygene
 var guests = {}
+var cache = {}
+var searchResults = null
 var tasks = []
 var certs = []
 var shown = null
@@ -39,7 +41,9 @@ function openSocket() {
             case "guestList":
                 rebuildGuests(obj.data)
                 break
-            //TODO: Add a "cacheList" option that will be sent like guestList
+            case "cacheList":
+                rebuildCache(obj.data)
+                break
             //If given one guest, swipe them in/out
             //This will also handle adding them to the Directory cache
             case "guest":
@@ -57,6 +61,9 @@ function openSocket() {
                 if (guests[obj.user]) {
                     guests[obj.user].history = obj.data
                     markNotes(obj.user)
+                }
+                if (cache[obj.user]) {
+                    guests
                 }
                 //If the modal is currently showing this user, update the modal
                 if ($("#managementModal").data("showing") == obj.user) {
@@ -82,15 +89,23 @@ function openSocket() {
 }
 
 //Rebuild the guests page when getting a new list
-function rebuildGuests(newList) {
+function rebuildGuests(newList, doCache) {
+    let source = guests
+    if (doCache) {
+        if (searchResults) {
+            source = searchResults
+        } else {
+            source = cache
+        }
+    }
     //For each person in the new list
     for (let i in newList) {
         //If they're already in the guest list
-        if (guests[newList[i].guest_id]) {
+        if (source[newList[i].guest_id]) {
             //Check if anything has changed from the current list
             let shouldRegenerate = false
             for (let j in newList[i]) {
-                if (!(newList[i][j] == guests[newList[i].guest_id][j])) {
+                if (!(newList[i][j] == source[newList[i].guest_id][j])) {
                     shouldRegenerate = true
                     break
                 }
@@ -99,26 +114,26 @@ function rebuildGuests(newList) {
             if (shouldRegenerate) {
                 //Make a new row object for this user and insert it after the current one, then remove the current one. Also save the new data, but preserve the history array.
                 let newElement = generateRow(newList[i])
-                newElement.insertAfter(guests[newList[i].guest_id].dataRow)
-                guests[newList[i].guest_id].dataRow.remove()
-                let oldHistory = guests[newList[i].guest_id].history
-                guests[newList[i].guest_id] = newList[i]
-                guests[newList[i].guest_id].history = oldHistory
-                guests[newList[i].guest_id].dataRow = newElement
+                newElement.insertAfter(source[newList[i].guest_id].dataRow)
+                source[newList[i].guest_id].dataRow.remove()
+                let oldHistory = source[newList[i].guest_id].history
+                source[newList[i].guest_id] = newList[i]
+                source[newList[i].guest_id].history = oldHistory
+                source[newList[i].guest_id].dataRow = newElement
             }
         //If they're not in the guest list already
         } else {
             //Make a row for this guest and add it to the table
-            let dataElement = generateRow(newList[i])
-            $("#guestsTable").append(dataElement)
+            let dataElement = generateRow(newList[i], doCache)
+            $(doCache ? "#directoryTable" : "#guestsTable").append(dataElement)
             //Save the guest data and add the proper linker
-            guests[newList[i].guest_id] = newList[i]
-            guests[newList[i].guest_id].dataRow = dataElement
+            source[newList[i].guest_id] = newList[i]
+            source[newList[i].guest_id].dataRow = dataElement
         }
     }
 
     //Filter out any guests which are no longer here
-    for (let i in guests) {
+    for (let i in source) {
         let stillHere = false
         for (let j in newList) {
             if (newList[j].guest_id == i) {
@@ -127,16 +142,20 @@ function rebuildGuests(newList) {
             }
         }
         if (!stillHere) {
-            if (guests[i].dataRow) guests[i].dataRow.remove()
-            delete guests[i]
+            if (source[i].dataRow) source[i].dataRow.remove()
+            delete source[i]
         }
     }
 }
 
 //Generate a row for a guest
-function generateRow(guest) {
+function generateRow(guest, doCache) {
     //Start of the row includes the first cell, and begins the div containing all the certification DOM elements
-    let toReturn = `<tr style="height: 1px"><td class="align-middle">${guest.name}</td><td style="height: inherit"><div class="d-flex align-items-center h-100">`
+    let toReturn = `<tr style="height: 1px">
+        ${doCache ? '<td class="align-middle">' + guest.guest_id + '</td>' : ""}
+        <td class="align-middle">${guest.name}</td>
+        ${doCache ? '<td class="align-middle">' + guest.email + '</td>' : ""}
+        <td style="height: inherit"><div class="d-flex align-items-center h-100">`
     //Make a list of the cert dom elements
     let certDoms = []
     //Make a list of whether the elements should be removed
@@ -571,6 +590,10 @@ function markNotes(user) {
         let element = $(html).popover()
         parent.append(element)
     }
+}
+
+function pruneCache(list) {
+
 }
 
 //Update the tasks section

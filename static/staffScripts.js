@@ -263,7 +263,7 @@ function generateRow(guest, doCache) {
 }
 
 //For a given source, (re)make a row
-function regenerateRow(guest, source, parent, doCache) {
+function regenerateRow(guest, source, parent, doCache, suppressDom) {
     //If the client already has data on this guest
     if (source[guest.guest_id]) {
         //See if anything is different
@@ -276,25 +276,45 @@ function regenerateRow(guest, source, parent, doCache) {
         }
         //If it is, generate a new element and replace the old element, then save the data.
         if (shouldRegenerate) {
-            let newElement = generateRow(guest, doCache)
-            newElement.insertAfter(source[guest.guest_id].dataRow)
-            source[guest.guest_id].dataRow.remove()
+            //If we're supposed to affect the dom
+            if (!suppressDom) { 
+                let newElement = generateRow(guest, doCache)
+                newElement.insertAfter(source[guest.guest_id].dataRow)
+                source[guest.guest_id].dataRow.remove()
+                source[guest.guest_id] = {}
+                for (let j in guest) {
+                    source[guest.guest_id][j] = guest[j]
+                }
+                source[guest.guest_id].dataRow = newElement
+            } else {
+                //Silently update our data without doing anything about the data
+                let oldElement = source[guest.guest_id].dataRow
+                source[guest.guest_id] = {}
+                for (let j in guest) {
+                    source[guest.guest_id][j] = guest[j]
+                }
+                source[guest.guest_id].dataRow = oldElement
+            }
+        }
+    //If we don't have data on this guest
+    } else {
+        //If we can affect the DOM
+        if (!suppressDom) {
+            //Generate a row and save our data
+            let dataElement = generateRow(guest, doCache)
+            parent.append(dataElement)
             source[guest.guest_id] = {}
             for (let j in guest) {
                 source[guest.guest_id][j] = guest[j]
             }
-            source[guest.guest_id].dataRow = newElement
+            source[guest.guest_id].dataRow = dataElement
+        } else {
+            //Silently save our data
+            source[guest.guest_id] = {}
+            for (let j in guest) {
+                source[guest.guest_id][j] = guest[j]
+            }
         }
-    //If we don't have data on this guest
-    } else {
-        //Generate a row and save our data
-        let dataElement = generateRow(guest, doCache)
-        parent.append(dataElement)
-        source[guest.guest_id] = {}
-        for (let j in guest) {
-            source[guest.guest_id][j] = guest[j]
-        }
-        source[guest.guest_id].dataRow = dataElement
     }
 }
 
@@ -303,7 +323,11 @@ function swipeGuest(guest) {
     //If the new guest is signing IN rather than out
     if (guest.here) {
         regenerateRow(guest, guests, $("#guestsTable"), false)
-        regenerateRow(guest, searchResults ? searchResults : cache, $("#directoryTable"), true)
+        if (searchResults) {
+            regenerateRow(guest, searchResults, $("#directoryTable"), true)
+            regenerateRow(guest, cache, $("#directoryTable"), true, true)
+        }
+        
     } else {
         //If they're swiping out and they're here
         if (guests[guest.guest_id]) {
@@ -677,6 +701,9 @@ function cancelSearch() {
     $("#search-email").val("")
     pruneCache()
     rebuildGuests(cache, true)
+    for (let i in cache) {
+        markNotes(i, true)
+    }
 }
 
 //Perform a search and update the UI

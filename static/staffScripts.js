@@ -69,9 +69,10 @@ function openSocket() {
                         }
                     }
                 } else {
-                    //Otherwise we need to call the function to do all of the UI stuff in addition to updating the 
+                    //Otherwise we need to call the function to do all of the UI stuff in addition to updating the data structure
                     rebuildGuests(obj.data, true)
                 }
+                pruneCache()
                 break
             //If given one guest, swipe them in/out
             //This will also handle adding them to the Directory cache

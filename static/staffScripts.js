@@ -42,7 +42,36 @@ function openSocket() {
                 rebuildGuests(obj.data)
                 break
             case "cacheList":
-                rebuildCache(obj.data)
+                //If we have search results in the directory tab, we simply need to update the cache in memory to be updated later
+                if (searchResults) {
+                    //Update data for guests who are here and add new guests
+                    for (let i in obj.data) {
+                        if (cache[obj.data[i].guest_id]) {
+                            for (let j in obj.data[i]) {
+                                cache[obj.data[i].guest_id][j] = obj.data[i][j]
+                            }
+                        } else {
+                            cache[obj.data[i].guest_id] = obj.data[i]
+                        }
+                    }
+                    
+                    //Filter out any guests which are no longer here
+                    for (let i in cache) {
+                        let stillHere = false
+                        for (let j in obj.data) {
+                            if (obj.data[j].guest_id == i) {
+                                stillHere = true
+                                break
+                            }
+                        }
+                        if (!stillHere) {
+                            delete cache[i]
+                        }
+                    }
+                } else {
+                    //Otherwise we need to call the function to do all of the UI stuff in addition to updating the 
+                    rebuildGuests(obj.data, true)
+                }
                 break
             //If given one guest, swipe them in/out
             //This will also handle adding them to the Directory cache
@@ -60,10 +89,11 @@ function openSocket() {
                 //Find the guest and set their history, then rebuild the notes section for them
                 if (guests[obj.user]) {
                     guests[obj.user].history = obj.data
-                    markNotes(obj.user)
+                    markNotes(obj.user, false)
                 }
                 if (cache[obj.user]) {
-                    guests
+                    cache[obj.user].history = obj.data
+                    markNotes(obj.user, true)
                 }
                 //If the modal is currently showing this user, update the modal
                 if ($("#managementModal").data("showing") == obj.user) {
@@ -110,12 +140,13 @@ function rebuildGuests(newList, doCache) {
                     break
                 }
             }
+            if (!source[newList[i].guest_id])
             //If anything has changed
             if (shouldRegenerate) {
                 //Make a new row object for this user and insert it after the current one, then remove the current one. Also save the new data, but preserve the history array.
-                let newElement = generateRow(newList[i])
+                let newElement = generateRow(newList[i], doCache)
                 newElement.insertAfter(source[newList[i].guest_id].dataRow)
-                source[newList[i].guest_id].dataRow.remove()
+                source[newList[i].guest_id].dataRow?.remove()
                 let oldHistory = source[newList[i].guest_id].history
                 source[newList[i].guest_id] = newList[i]
                 source[newList[i].guest_id].history = oldHistory
@@ -221,37 +252,43 @@ function generateRow(guest, doCache) {
     return toReturn
 }
 
+//For a given source, (re)make a row
+function regenerateRow(guest, source, parent, doCache) {
+    //If the client already has data on this guest
+    if (source[guest.guest_id]) {
+        //See if anything is different
+        let shouldRegenerate = false
+        for (let j in guest) {
+            if (!(guest[j] == source[guest.guest_id][j])) {
+                shouldRegenerate = true
+                break
+            }
+        }
+        //If it is, generate a new element and replace the old element, then save the data.
+        if (shouldRegenerate) {
+            let newElement = generateRow(guest, doCache)
+            newElement.insertAfter(source[guest.guest_id].dataRow)
+            source[guest.guest_id].dataRow.remove()
+            source[guest.guest_id] = guest
+            source[guest.guest_id].dataRow = newElement
+        }
+    //If we don't have data on this guest
+    } else {
+        //Generate a row and save our data
+        let dataElement = generateRow(guest, doCache)
+        parent.append(dataElement)
+        source[guest.guest_id] = guest
+        source[guest.guest_id].dataRow = dataElement
+    }
+}
+
 //Function for when we get a message that a guest has either come or gone
 //TODO: This needs to also add to the directory cache
 function swipeGuest(guest) {
     //If the new guest is signing IN rather than out
     if (guest.here) {
-        //If the client already has data on this guest
-        if (guests[guest.guest_id]) {
-            //See if anything is different
-            let shouldRegenerate = false
-            for (let j in guest) {
-                if (!(guest[j] == guests[guest.guest_id][j])) {
-                    shouldRegenerate = true
-                    break
-                }
-            }
-            //If it is, generate a new element and replace the old element, then save the data.
-            if (shouldRegenerate) {
-                let newElement = generateRow(guest)
-                newElement.insertAfter(guests[guest.guest_id].dataRow)
-                guests[guest.guest_id].dataRow.remove()
-                guests[guest.guest_id] = guest
-                guests[guest.guest_id].dataRow = newElement
-            }
-        //If we don't have data on this guest
-        } else {
-            //Generate a row and save our data
-            let dataElement = generateRow(guest)
-            $("#guestsTable").append(dataElement)
-            guests[guest.guest_id] = guest
-            guests[guest.guest_id].dataRow = dataElement
-        }
+        regenerateRow(guest, guests, $("#guestsTable"), false)
+        regenerateRow(guest, cache, $("#directoryTable"), true)
     } else {
         //If they're swiping out and they're here
         if (guests[guest.guest_id]) {
@@ -291,6 +328,8 @@ async function loadModal(guest) {
 
     //Set the shown guest to the selected guest
     shown = guests[guest]
+    if (!shown) shown = cache[guest]
+    if (!shown && searchResults) shown = searchResults[guest]
 
     //If the shown guest isn't actually in the guests list, fetch it from the server
     if (!shown) {
@@ -508,20 +547,23 @@ function submitNote() {
     $("#noteText").val("")
 }
 
+function markNotes(user, doCache) {
+    let parent = (doCache ? cache : guests)[user]?.dataRow?.find(".notes")
+    if (parent) markNotesForRow(user, parent, (doCache ? cache : guests))
+}
+
 //Adds the notes objects
-function markNotes(user) {
-    //Get the parent for all the notes elements
-    let parent = guests[user].dataRow.find(".notes")
+function markNotesForRow(user, parent, source) {
     //Remove the children
     parent.empty()
     //Make an object collecting all the notes info into categories
     let notes = {}
     //For all the history items
-    for (let i in guests[user].history) {
+    for (let i in source[user].history) {
         //If it's resolved, skip this one
-        if (guests[user].history[i].resolved) continue
+        if (source[user].history[i].resolved) continue
         //Type router
-        switch (guests[user].history[i].type) {
+        switch (source[user].history[i].type) {
             //For notes, add it to the notes array
             case history_types.FIRST_VISIT:
                 if (!notes.notes) notes.notes = []
@@ -529,22 +571,22 @@ function markNotes(user) {
                 break
             case history_types.NOTE:
                 if (!notes.notes) notes.notes = []
-                notes.notes.push(guests[user].history[i].note)
+                notes.notes.push(source[user].history[i].note)
                 break
             //For things which need attention, add them to the attention array
             case history_types.ATTENTION:
                 if (!notes.attention) notes.attention = []
-                notes.attention.push(guests[user].history[i].note)
+                notes.attention.push(source[user].history[i].note)
                 break
             //For problems, add it to that array
             case history_types.PROBLEM:
                 if (!notes.problem) notes.problem = []
-                notes.problem.push(guests[user].history[i].note)
+                notes.problem.push(source[user].history[i].note)
                 break
             //You get the idea
             case history_types.REVOKE_CERT:
                 if (!notes.revoked) notes.revoked = []
-                notes.revoked.push(`${findCertById(guests[user].history[i].cert).name} certification was ${guests[user].history[i].type == 3 ? "revoked" : "added"} ${guests[user].history[i].type == 7 ? "automatically" : "manually"}${guests[user].history[i].note ? " with the following reason:\n\n" + guests[user].history[i].note : ""}`)
+                notes.revoked.push(`${findCertById(source[user].history[i].cert).name} certification was ${source[user].history[i].type == 3 ? "revoked" : "added"} ${source[user].history[i].type == 7 ? "automatically" : "manually"}${source[user].history[i].note ? " with the following reason:\n\n" + source[user].history[i].note : ""}`)
                 break
         }
     }
@@ -592,8 +634,17 @@ function markNotes(user) {
     }
 }
 
-function pruneCache(list) {
-
+function pruneCache() {
+    let now = new Date().getDate()
+    for (let i in cache) {
+        if (cache[i].history[cache[i].history.length - 1].date.getDate() == now) {
+            if (cache[i].dataRow) {
+                cache[i].dataRow.remove()
+                cache[i].dataRow = null
+            }
+            delete cache[i]
+        }
+    }
 }
 
 //Update the tasks section

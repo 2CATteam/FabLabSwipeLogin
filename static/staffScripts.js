@@ -86,6 +86,8 @@ function openSocket() {
                 for (let i in obj.data) {
                     obj.data[i].date = new Date(obj.data[i].date)
                 }
+                //Sort the history data
+                obj.data.sort((a, b) => a.event_id - b.event_id)
                 //Find the guest and set their history, then rebuild the notes section for them
                 if (guests[obj.user]) {
                     guests[obj.user].history = obj.data
@@ -122,10 +124,11 @@ function openSocket() {
 }
 
 //Rebuild the guests page when getting a new list
-function rebuildGuests(newList, doCache) {
+function rebuildGuests(newList, doCache, doSearch) {
     let source = guests
     if (doCache) {
-        if (searchResults) {
+        if (doSearch) {
+            if (!searchResults) searchResults = {}
             source = searchResults
         } else {
             source = cache
@@ -134,7 +137,7 @@ function rebuildGuests(newList, doCache) {
     //For each person in the new list
     for (let i in newList) {
         //If they're already in the guest list
-        if (source[newList[i].guest_id]) {
+        if (source[newList[i].guest_id] && source[newList[i].guest_id].dataRow) {
             //Check if anything has changed from the current list
             let shouldRegenerate = false
             for (let j in newList[i]) {
@@ -143,8 +146,9 @@ function rebuildGuests(newList, doCache) {
                     break
                 }
             }
-            if (!source[newList[i].guest_id])
-            //If anything has changed
+            //If they don't exist, continue
+            if (!source[newList[i].guest_id]) continue
+            //If anything has changed or there is no data row for this object
             if (shouldRegenerate) {
                 //Make a new row object for this user and insert it after the current one, then remove the current one. Also save the new data, but preserve the history array.
                 let newElement = generateRow(newList[i], doCache)
@@ -646,7 +650,7 @@ function markNotesForRow(user, parent, source) {
 function pruneCache() {
     let now = new Date().getDate()
     for (let i in cache) {
-        if (cache[i].history[cache[i].history.length - 1].date.getDate() == now) {
+        if (cache[i].history[cache[i].history.length - 1].date.getDate() !== now) {
             if (cache[i].dataRow) {
                 cache[i].dataRow.remove()
                 cache[i].dataRow = null
@@ -654,6 +658,44 @@ function pruneCache() {
             delete cache[i]
         }
     }
+}
+
+function cancelSearch() {
+    for (let i in searchResults) {
+        searchResults[i].dataRow.remove()
+        searchResults[i].dataRow = null
+    }
+    searchResults = null
+    $("#search-id").val("")
+    $("#search-name").val("")
+    $("#search-email").val("")
+    pruneCache()
+    rebuildGuests(cache, true)
+}
+
+function doSearch() {
+    $.post("/search", JSON.stringify({ id: $("#search-id").val(), name: $("#search-name").val(), email: $("#search-email").val() })).done((data, status, xhr) => {
+        console.log(data)
+        console.log(status)
+        console.log(xhr)
+        if (xhr.status != 200) {
+            return console.error(xhr.status)
+        }
+        let localResults = {}
+        for (let i in data) {
+            localResults[data[i].guest_id] = data[i]
+        }
+        for (let i in cache) {
+            cache[i].dataRow?.remove()
+            cache[i].dataRow = null
+        }
+        rebuildGuests(localResults, true, true)
+    })
+    .fail((data, status, xhr) => {
+        console.error(data)
+        console.error(status)
+        console.error(xhr)
+    })
 }
 
 //Update the tasks section
@@ -851,6 +893,14 @@ $(document).ready(() => {
     var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
     var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
         return new bootstrap.Tooltip(tooltipTriggerEl)
+    })
+    $("#nav-directory-tab").click(() => {
+        pruneCache()
+    })
+    $("#search-id, #search-name, #search-email").keypress((e) => {
+        if (e.which == 13) {
+            doSearch()
+        }
     })
 })
 

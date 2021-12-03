@@ -79,7 +79,6 @@ function openSocket() {
                 swipeGuest(obj.data)
                 break
             //Add history for a single user
-            //TODO: Also have this consider directory stuff
             case "history":
                 console.log("Got user history")
                 //Make string objects into actual date objects
@@ -87,7 +86,7 @@ function openSocket() {
                     obj.data[i].date = new Date(obj.data[i].date)
                 }
                 //Sort the history data
-                obj.data.sort((a, b) => a.event_id - b.event_id)
+                obj.data.sort((a, b) => b.event_id - a.event_id)
                 //Find the guest and set their history, then rebuild the notes section for them
                 if (guests[obj.user]) {
                     guests[obj.user].history = obj.data
@@ -95,6 +94,10 @@ function openSocket() {
                 }
                 if (cache[obj.user]) {
                     cache[obj.user].history = obj.data
+                    markNotes(obj.user, true)
+                }
+                if (searchResults?.[obj.user]) {
+                    searchResults[obj.user].history = obj.data
                     markNotes(obj.user, true)
                 }
                 //If the modal is currently showing this user, update the modal
@@ -296,12 +299,11 @@ function regenerateRow(guest, source, parent, doCache) {
 }
 
 //Function for when we get a message that a guest has either come or gone
-//TODO: This needs to also add to the directory cache
 function swipeGuest(guest) {
     //If the new guest is signing IN rather than out
     if (guest.here) {
         regenerateRow(guest, guests, $("#guestsTable"), false)
-        regenerateRow(guest, cache, $("#directoryTable"), true)
+        regenerateRow(guest, searchResults ? searchResults : cache, $("#directoryTable"), true)
     } else {
         //If they're swiping out and they're here
         if (guests[guest.guest_id]) {
@@ -309,10 +311,14 @@ function swipeGuest(guest) {
             guests[guest.guest_id].dataRow.remove()
             delete guests[guest.guest_id]
         } else {
-            //How do you get here
-            console.log("Someone left, but they were already gone!")
-            console.log(guest)
-            //Nothing needs to change
+            if (searchResults?.[guest.guest_id]) {
+                regenerateRow(guest, searchResults, $("#directoryTable"), true)
+            } else {
+                //How do you get here
+                console.log("Someone left, but they were already gone!")
+                console.log(guest)
+                //Nothing needs to change
+            }
         }
     }
 }
@@ -561,8 +567,8 @@ function submitNote() {
 }
 
 function markNotes(user, doCache) {
-    let parent = (doCache ? cache : guests)[user]?.dataRow?.find(".notes")
-    if (parent) markNotesForRow(user, parent, (doCache ? cache : guests))
+    let parent = (doCache ? (searchResults ?? cache) : guests)[user]?.dataRow?.find(".notes")
+    if (parent) markNotesForRow(user, parent, (doCache ? (searchResults ?? cache) : guests))
 }
 
 //Adds the notes objects
@@ -650,7 +656,7 @@ function markNotesForRow(user, parent, source) {
 function pruneCache() {
     let now = new Date().getDate()
     for (let i in cache) {
-        if (cache[i].history[cache[i].history.length - 1].date.getDate() !== now) {
+        if (cache[i].history[0].date.getDate() !== now) {
             if (cache[i].dataRow) {
                 cache[i].dataRow.remove()
                 cache[i].dataRow = null
@@ -673,23 +679,31 @@ function cancelSearch() {
     rebuildGuests(cache, true)
 }
 
+//Perform a search and update the UI
 function doSearch() {
+    //Call the API
     $.post("/search", JSON.stringify({ id: $("#search-id").val(), name: $("#search-name").val(), email: $("#search-email").val() })).done((data, status, xhr) => {
-        console.log(data)
-        console.log(status)
-        console.log(xhr)
         if (xhr.status != 200) {
             return console.error(xhr.status)
         }
+        //Assemble the results object
         let localResults = {}
         for (let i in data) {
             localResults[data[i].guest_id] = data[i]
+            for (let j in localResults[data[i].guest_id].history) {
+                localResults[data[i].guest_id].history[j].date = new Date(localResults[data[i].guest_id].history[j].date)
+            }
         }
+        //Remove cache rows
         for (let i in cache) {
             cache[i].dataRow?.remove()
             cache[i].dataRow = null
         }
+        //Build the directory table with the search results
         rebuildGuests(localResults, true, true)
+        for (let i in localResults) {
+            markNotes(i, true)
+        }
     })
     .fail((data, status, xhr) => {
         console.error(data)

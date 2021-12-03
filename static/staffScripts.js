@@ -42,6 +42,15 @@ function openSocket() {
                 rebuildGuests(obj.data, false)
                 break
             case "cacheList":
+                let now = new Date().getDate()
+                //Make the keys into actual dates and filter on them
+                for (let i in obj.data) {
+                    if (new Date(obj.data[i].last).getDate() != now) {
+                        delete obj.data[i]
+                    } else {
+                        delete obj.data[i].last
+                    }
+                }
                 //If we have search results in the directory tab, we simply need to update the cache in memory to be updated later
                 if (searchResults) {
                     //Update data for guests who are here and add new guests
@@ -72,7 +81,6 @@ function openSocket() {
                     //Otherwise we need to call the function to do all of the UI stuff in addition to updating the data structure
                     rebuildGuests(obj.data, true)
                 }
-                pruneCache()
                 break
             //If given one guest, swipe them in/out
             //This will also handle adding them to the Directory cache
@@ -681,13 +689,14 @@ function markNotesForRow(user, parent, source) {
 function pruneCache() {
     let now = new Date().getDate()
     for (let i in cache) {
-        if (cache[i].history?.length > 0)
-        if (cache[i].history[0].date.getDate() !== now) {
-            if (cache[i].dataRow) {
-                cache[i].dataRow.remove()
-                cache[i].dataRow = null
+        if (cache[i].history?.length > 0) {
+            if (cache[i].history[0].date.getDate() !== now) {
+                if (cache[i].dataRow) {
+                    cache[i].dataRow.remove()
+                    cache[i].dataRow = null
+                }
+                delete cache[i]
             }
-            delete cache[i]
         }
     }
 }

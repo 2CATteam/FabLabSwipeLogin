@@ -681,6 +681,7 @@ function markNotesForRow(user, parent, source) {
 function pruneCache() {
     let now = new Date().getDate()
     for (let i in cache) {
+        if (cache[i].history?.length > 0)
         if (cache[i].history[0].date.getDate() !== now) {
             if (cache[i].dataRow) {
                 cache[i].dataRow.remove()

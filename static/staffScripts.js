@@ -335,8 +335,9 @@ function swipeGuest(guest) {
         if (searchResults) {
             regenerateRow(guest, searchResults, $("#directoryTable"), true)
             regenerateRow(guest, cache, $("#directoryTable"), true, true)
+        } else {
+            regenerateRow(guest, cache, $("#directoryTable"), true)
         }
-        
     } else {
         //If they're swiping out and they're here
         if (guests[guest.guest_id]) {

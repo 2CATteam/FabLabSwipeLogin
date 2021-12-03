@@ -39,7 +39,7 @@ function openSocket() {
         switch (obj.type) {
             //If given all the guests, rebuild the guest list where appropriate
             case "guestList":
-                rebuildGuests(obj.data)
+                rebuildGuests(obj.data, false)
                 break
             case "cacheList":
                 //If we have search results in the directory tab, we simply need to update the cache in memory to be updated later
@@ -108,6 +108,9 @@ function openSocket() {
             case "certs":
                 makeCertLabels(obj.data)
                 break
+        }
+        if (guests?.[113428714]?.dataRow?.parents?.()?.length < 6) {
+            console.error("That did it")
         }
     }
     //When the socket closes, attempt to reconnect it
@@ -269,7 +272,10 @@ function regenerateRow(guest, source, parent, doCache) {
             let newElement = generateRow(guest, doCache)
             newElement.insertAfter(source[guest.guest_id].dataRow)
             source[guest.guest_id].dataRow.remove()
-            source[guest.guest_id] = guest
+            source[guest.guest_id] = {}
+            for (let j in guest) {
+                source[guest.guest_id][j] = guest[j]
+            }
             source[guest.guest_id].dataRow = newElement
         }
     //If we don't have data on this guest
@@ -277,7 +283,10 @@ function regenerateRow(guest, source, parent, doCache) {
         //Generate a row and save our data
         let dataElement = generateRow(guest, doCache)
         parent.append(dataElement)
-        source[guest.guest_id] = guest
+        source[guest.guest_id] = {}
+        for (let j in guest) {
+            source[guest.guest_id][j] = guest[j]
+        }
         source[guest.guest_id].dataRow = dataElement
     }
 }
@@ -486,7 +495,7 @@ async function showModal(guest) {
 //This gets called when the staff member presses the button to add or remove a cert
 function addRemoveCert(guest, index) {
     //Nullish coalescence. Learn it, it will save you SO much time
-    let guestCerts = guests[guest]?.certs ?? shown?.certs
+    let guestCerts = guests[guest]?.certs ?? cache[guest]?.certs ?? searchResults?.[guest]?.certs ?? shown?.certs
     //If no certs, we don't know who this is
     if (guestCerts === null) {
         console.error("I have no idea who or where this guest is:")

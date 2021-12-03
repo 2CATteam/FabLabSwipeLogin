@@ -442,8 +442,12 @@ async function loadModal(guest) {
 
     //Remove every data row in the table
     $("#historyTable td").parents("tr").remove()
-    //Sort the history table
-    shown.history.sort((a, b) => {
+    //Make a new history list sorted custom-ly
+    let localHistory = []
+    for (let i in shown.history) {
+        localHistory.push(shown.history[i])
+    }
+    localHistory.sort((a, b) => {
         if (a.resolved && !b.resolved) {
             return 1
         } else if (b.resolved && !a.resolved) {
@@ -460,13 +464,13 @@ async function loadModal(guest) {
     //Formats the dates. Apparently making this is really taxing on the system so I initialize it here and reuse it
     let formatter = new Intl.DateTimeFormat('en-us')
     //For each item
-    for (let i in shown.history) {
+    for (let i in localHistory) {
         //Set the type, color, and description of each item
         let type = "Unknown"
         let color = ""
-        let description = shown.history[i].note ? shown.history[i].note : ""
+        let description = localHistory[i].note ? localHistory[i].note : ""
         //Set the above values
-        switch (shown.history[i].type) {
+        switch (localHistory[i].type) {
             case history_types.NOTE:
                 type = "Note"
                 color = "table-info"
@@ -493,24 +497,24 @@ async function loadModal(guest) {
                 break
         }
         //Reset the color to grey if they're done
-        if (shown.history[i].resolved) {
+        if (localHistory[i].resolved) {
             color = "table-secondary"
         }
         //Add text if needed for these types
         if (type == "Certification") {
-            description = `${findCertById(shown.history[i].cert).name} certification was ${shown.history[i].type == 3 ? "revoked" : "added"} ${shown.history[i].type == 7 ? "automatically" : "manually"}${shown.history[i].note ? " with the following reason:\n\n" + shown.history[i].note : ""}`
+            description = `${findCertById(localHistory[i].cert).name} certification was ${localHistory[i].type == 3 ? "revoked" : "added"} ${localHistory[i].type == 7 ? "automatically" : "manually"}${localHistory[i].note ? " with the following reason:\n\n" + localHistory[i].note : ""}`
         } else if (type == "Visit" && description) {
             description = `Left at ${new Date(description).toLocaleTimeString()}`
         }
         //Make the button if needed
-        let buttonHtml = `<button class="btn btn-primary" onclick="resolve(${shown.history[i].event_id}, ${guest})">Resolve</button>`
-        if (shown.history[i].resolved) {
+        let buttonHtml = `<button class="btn btn-primary" onclick="resolve(${localHistory[i].event_id}, ${guest})">Resolve</button>`
+        if (localHistory[i].resolved) {
             buttonHtml = ""
         }
         //Make the final HTML for the row
         let html = `<tr class="${color}">
-            <td data-bs-toggle="tooltip" data-bs-placement="top" title="${shown.history[i].date.toLocaleTimeString()}">
-                ${formatter.format(shown.history[i].date)}
+            <td data-bs-toggle="tooltip" data-bs-placement="top" title="${localHistory[i].date.toLocaleTimeString()}">
+                ${formatter.format(localHistory[i].date)}
             </td>
             <td>
                 ${type}

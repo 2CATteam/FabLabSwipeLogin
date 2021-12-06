@@ -121,8 +121,8 @@
         <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header flex-column">
-                    <h1 id="modalName">Person</h1>
-                    <p id="modalEmail">person@ou.edu</h1>
+                    <input id="modalName" type="text" class="form-control form-control-lg form-control-plaintext text-center fs-1 mb-1" style="font-weight: 500;"></input>
+                    <input id="modalEmail" type="text" class="form-control form-control-plaintext text-center"></input>
                 </div>
                 <div class="modal-body">
                     <h3>Certifications</h3>
@@ -154,8 +154,9 @@
                     </table>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-danger" data-bs-dismiss="modal" onclick="swipeOutGuest()">Sign In/Out</button>
-                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Done</button>
+                    <button type="button" class="btn btn-danger" data-bs-dismiss="modal" onclick="cancelEdits()">Cancel</button>
+                    <button type="button" class="btn btn-secondary" onclick="swipeOutGuest()">Sign In/Out</button>
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal" onclick="submitEdits()">Done</button>
                 </div>
             </div>
         </div>

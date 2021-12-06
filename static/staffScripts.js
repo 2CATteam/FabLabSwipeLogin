@@ -89,7 +89,6 @@ function openSocket() {
                 break
             //Add history for a single user
             case "history":
-                console.log("Got user history")
                 //Make string objects into actual date objects
                 for (let i in obj.data) {
                     obj.data[i].date = new Date(obj.data[i].date)
@@ -263,7 +262,6 @@ function generateRow(guest, doCache) {
     toReturn = $(toReturn)
     //When it's clicked, show the modal
     toReturn.click(guest, (e) => {
-        console.log(e)
         showModal(e.data.guest_id)
     })
     //Enable Bootstrap tooltips
@@ -363,15 +361,11 @@ function swipeOutGuest() {
     //Send that to the API and log response
     $.post("/signin", JSON.stringify({ type: "swipe", id: shown.guest_id })).done((data, status, xhr) => {
         console.log(data)
-        console.log(status)
-        console.log(xhr)
         if (xhr.status != 200) {
             console.error(xhr.status)
         }
     })
     .fail((data, status, xhr) => {
-        console.error(data)
-        console.error(status)
         console.error(xhr)
     })
 }
@@ -405,8 +399,6 @@ async function loadModal(guest) {
                         }
                     })
                     .fail((data, status, xhr) => {
-                        console.error(data)
-                        console.error(status)
                         console.error(xhr)
                         reject(status)
                     }
@@ -419,8 +411,8 @@ async function loadModal(guest) {
     $("#managementModal").data("showing", guest)
     
     //Set the names of the modal
-    $("#modalName").text(shown.name)
-    $("#modalEmail").text(shown.email)
+    $("#modalName").val(shown.name)
+    $("#modalEmail").val(shown.email)
 
     //Fills the cert table after initializing it
     $("#certTable").find("td").parents("tr").remove()
@@ -536,6 +528,7 @@ async function loadModal(guest) {
 
 //Load the modal and then show it
 async function showModal(guest) {
+    cancelEdits()
     await loadModal(guest)
     $("#managementModal").modal('show')
 }
@@ -600,7 +593,6 @@ function submitNote() {
         id: $("#managementModal").data("showing"),
         note: $("#noteText").val()
     }))
-    console.log($("#noteSelect").val())
     $("#noteText").val("")
 }
 
@@ -749,10 +741,36 @@ function doSearch() {
         }
     })
     .fail((data, status, xhr) => {
-        console.error(data)
-        console.error(status)
         console.error(xhr)
     })
+}
+
+//Perform an edit of a user
+function submitEdits() {
+    //Check if any changes need to be made
+    if ($("#modalName").val() == shown?.name && $("#modalEmail").val() == shown?.email) {
+        console.log("No changes detected")
+        return
+    }
+    //Call the API
+    $.post("/editUser", JSON.stringify({ id: shown.guest_id, name: $("#modalName").val(), email: $("#modalEmail").val() })).done((data, status, xhr) => {
+        //We shouldn't need to do anything but error handling and styling, as we can trust the websocket to do the rest
+        if (xhr.status != 200) {
+            return console.error(xhr.status)
+        }
+        $("#modalName").addClass("form-control-plaintext")
+        $("#modalEmail").addClass("form-control-plaintext")
+    })
+    .fail((data, status, xhr) => {
+        console.error(xhr)
+    })
+}
+
+function cancelEdits() {
+    $("#modalName").val(shown?.name ?? "Person")
+    $("#modalEmail").val(shown?.email ?? "person@ou.edu")
+    $("#modalName").addClass("form-control-plaintext")
+    $("#modalEmail").addClass("form-control-plaintext")
 }
 
 //Update the tasks section
@@ -957,6 +975,13 @@ $(document).ready(() => {
     $("#search-id, #search-name, #search-email").keypress((e) => {
         if (e.which == 13) {
             doSearch()
+        }
+    })
+    $("#modalName, #modalEmail").keydown((e) => {
+        if (e.key == "Enter") {
+            submitEdits()
+        } else if (e.key == "Escape") {
+            cancelEdits()
         }
     })
 })

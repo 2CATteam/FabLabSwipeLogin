@@ -262,6 +262,37 @@ app.post('/search', (req, res) => {
     })
 })
 
+//Edit a user's info
+app.post('/editUser', (req, res) => {
+    //Get args
+    let info = ""
+    req.on("data", (chunk) => {
+        info += chunk
+    })
+    req.on('end', async () => {
+        try {
+            //Parse args, get db
+            let args = JSON.parse(info)
+            let dbConnection = getDBConnection(req.cookies.token)
+            if (!dbConnection) {
+                res.writeHead(400, "Invalid credentials")
+                res.end()
+                return
+            }
+            //Get the guest information and send it
+            await dbConnection.editUser(args.id, args.name, args.email)
+            broadcastGuest(req.cookies.shop, args.id)
+            res.writeHead(200)
+            res.end()
+        } catch (e) {
+            console.error("Caught the following error:")
+            console.error(e)
+            res.writeHead(400, "Bad Request")
+            res.end()
+        }
+    })
+})
+
 //Make routing trees for each instance
 for (let i in instances) {
     //Make the new router

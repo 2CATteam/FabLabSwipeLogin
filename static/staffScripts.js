@@ -6,6 +6,7 @@ var tasks = []
 var certs = []
 var shown = null
 var socket = null
+var pingInterval = null
 
 //Enum, identical to the one in databaseTools.js
 const history_types = {
@@ -29,12 +30,14 @@ function openSocket() {
         socket.send(JSON.stringify({
             secret: getCookie("token")
         }))
+        pingInterval = setInterval(() => {
+            socket.send(JSON.stringify({type: "ping"}))
+        }, 30000)
     }
     //When we get a message, do this
     socket.onmessage = function onMessage(event) {
         //Get the data and parse it
         let obj = JSON.parse(event.data)
-        console.log(obj)
         //Event router
         switch (obj.type) {
             //If given all the guests, rebuild the guest list where appropriate
@@ -121,6 +124,8 @@ function openSocket() {
             case "certs":
                 makeCertLabels(obj.data)
                 break
+            case "pong":
+                break
         }
         if (guests?.[113428714]?.dataRow?.parents?.()?.length < 6) {
             console.error("That did it")
@@ -128,6 +133,7 @@ function openSocket() {
     }
     //When the socket closes, attempt to reconnect it
     socket.onclose = function reconnect(event) {
+        clearInterval(pingInterval)
         console.log(`Socket closed at: ${new Date().toString()}. Attempting to reconnect. Reason for closing is:`)
         console.log(event.reason)
         setTimeout(openSocket, 1000)

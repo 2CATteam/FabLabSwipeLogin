@@ -480,6 +480,9 @@ WSS.on('connection', async function(ws) {
                 await dbConnection.doTask(args.id, args.date)
                 broadcastTasks(getNameFromAuth(ws.secret))
                 break
+            case "ping":
+                ws.send(JSON.stringify({type: "pong"}))
+                break
         }
     })
 })

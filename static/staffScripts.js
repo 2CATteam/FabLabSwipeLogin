@@ -316,6 +316,9 @@ function regenerateRow(guest, source, parent, doCache, suppressDom) {
             //Generate a row and save our data
             let dataElement = generateRow(guest, doCache)
             parent.append(dataElement)
+            //https://stackoverflow.com/questions/7302824/animating-addclass-removeclass-with-jquery
+            dataElement.addClass("table-secondary")
+            setTimeout(() => {dataElement.removeClass("table-secondary")}, 500)
             source[guest.guest_id] = {}
             for (let j in guest) {
                 source[guest.guest_id][j] = guest[j]

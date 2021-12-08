@@ -89,3 +89,10 @@ hr {
     background: #535AFF 0% 0% no-repeat padding-box;
     opacity: 1;
 }
+
+tr, td {
+    -webkit-transition: all 0.5s linear;
+    -moz-transition: all 0.5s linear;
+    -o-transition: all 0.5s linear;
+    transition: all 0.5s linear;
+}

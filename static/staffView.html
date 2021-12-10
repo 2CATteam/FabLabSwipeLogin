@@ -14,7 +14,7 @@
             <button class="nav-link active text-light ms-2" id="nav-guests-tab" data-bs-toggle="tab" data-bs-target="#nav-guests" type="button" role="tab" aria-controls="nav-guests" aria-selected="true">Guests</button>
             <button class="nav-link text-light" id="nav-directory-tab" data-bs-toggle="tab" data-bs-target="#nav-directory" type="button" role="tab" aria-controls="nav-directory" aria-selected="false">Directory</button>
             <button class="nav-link text-light" id="nav-tasks-tab" data-bs-toggle="tab" data-bs-target="#nav-tasks" type="button" role="tab" aria-controls="nav-tasks" aria-selected="false">Tasks</button>
-            <!--<button class="nav-link text-light me-2" id="nav-checkouts-tab" data-bs-toggle="tab" data-bs-target="#nav-checkouts" type="button" role="tab" aria-controls="nav-checkouts" aria-selected="false">Check-Out</button>-->
+            <button class="nav-link text-light" id="nav-admin-tab" data-bs-toggle="tab" data-bs-target="#nav-admin" type="button" role="tab" aria-controls="nav-admin" aria-selected="false">Admin</button>
         </div>
     </nav>
     <div class="tab-content" id="nav-tabContent">
@@ -115,6 +115,11 @@
                     </th>
                 </tr>
             </table>
+        </div>
+        <div class="tab-pane fade" id="nav-admin" role="tabpanel" aria-labelledby="nav-admin-tab">
+            <a class="btn btn-primary" href="/dataDump" download="shopDump.csv">Data dump download</a>
+            <button class="btn btn-primary" onclick="getConfig()">Download Config file</button>
+            <button class="btn btn-primary" onclick="putConfig()">Upload new Config file</button>
         </div>
     </div>
     <div id="managementModal" class="modal fade" tabindex="-1">

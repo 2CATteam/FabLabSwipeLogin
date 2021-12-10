@@ -293,6 +293,46 @@ app.post('/editUser', (req, res) => {
     })
 })
 
+//Does a data dump
+app.get('/dataDump', async (req, res) => {
+    try {
+        //Get db
+        let dbConnection = getDBConnection(req.cookies.token)
+        if (!dbConnection) {
+            res.writeHead(400, "Invalid credentials")
+            res.end()
+            return
+        }
+        //Get the data dump and send it
+        let dump = await dbConnection.dataDump()
+        let toReturn = ""
+        if (dump.length > 0) {
+            for (let i in dump[0]) {
+                toReturn += i
+                toReturn += ","
+            }
+            toReturn += "\n"
+            for (let i in dump) {
+                for (let j in dump[i]) {
+                    toReturn += dump[i][j]
+                    toReturn += ","
+                }
+                toReturn += "\n"
+            }
+            res.writeHead(200, { 'Content-Type': 'text/csv' })
+            res.end(toReturn)
+        } else {
+            res.writeHead(200)
+            res.end()
+        }
+    } catch (e) {
+        console.error("Caught the following error:")
+        console.error(e)
+        res.writeHead(400, "Bad Request")
+        res.end()
+    }
+})
+
 //Make routing trees for each instance
 for (let i in instances) {
     //Make the new router

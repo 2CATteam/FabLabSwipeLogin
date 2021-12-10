@@ -27,15 +27,18 @@
 }
 
 .welcomeText {
-    position: absolute;
-    width: fit-content;
     white-space: pre-line;
-    height: fit-content;
     text-align: left;
-    font: normal normal 900 114px/140px acumin-pro;
+    font: normal normal 900 84px/110px acumin-pro;
     letter-spacing: 0px;
     color: #FFFFFF;
     opacity: 1;
+}
+
+.welcomeDiv {
+    position: absolute;
+    width: fit-content;
+    height: fit-content;
     padding-right: calc(4.5vw + 1vh);
 }
 
@@ -85,4 +88,11 @@ hr {
     border: 2px solid #535AFFFF;
     background: #535AFF 0% 0% no-repeat padding-box;
     opacity: 1;
+}
+
+tr, td {
+    -webkit-transition: all 0.5s linear;
+    -moz-transition: all 0.5s linear;
+    -o-transition: all 0.5s linear;
+    transition: all 0.5s linear;
 }

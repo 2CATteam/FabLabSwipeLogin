@@ -373,7 +373,7 @@ for (let i in instances) {
         router.get(`/${instances[i].certs[j].name.replace(/\W/g, '')}`, (req, res) => {
             //Using Pug (a cool library I just learned), render an HTML page representing the Canvas quiz, and send it to the client
             canvasTools.getQuizData(instances[i].certs[j].quizId).then((data) => {
-                res.render("quizTemplate.pug", {data: data})
+                res.render("quizTemplate.pug", {data: data, shopName: i})
             }).catch((err) => {
                 //Error handling
                 console.error(err)

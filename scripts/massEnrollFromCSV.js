@@ -3,6 +3,18 @@ const axios = require('axios')
 var sqlite = require('sqlite3');
 let fs = require('fs')
 
+const history_types = {
+    NOTE: 0,
+    ATTENTION: 1,
+    PROBLEM: 2,
+    REVOKE_CERT: 3,
+    ADD_CERT: 4,
+    VISIT: 5,
+    FIRST_VISIT: 6,
+    AUTO_ADD: 7,
+}
+
+
 const instance = axios.create({
     baseURL: 'https://canvas.ou.edu',
     headers: {
@@ -27,9 +39,9 @@ function enrollUser(ouid, email, name) {
             console.log(response.data)
             messageUser(response.data.user_id, "Welcome to our Canvas course!", `Welcome to the Tom Love Innovation Hub Fabrication Lab!
 
-You are a current student in Dr. Dodd's CAD class, and by merit of that, you’ve now been enrolled in a canvas course titled ‘Shop Fundamentals’ that you can access by signing into canvas just like you do for your other courses. This canvas course holds the training videos and quizzes for access to using Fab Lab equipment.
+You are a current student in Karen Hayes-Thumann's Viscomm 2 class, and by merit of that, you’ve now been enrolled in a canvas course titled ‘Shop Fundamentals’ that you can access by signing into canvas just like you do for your other courses. This canvas course holds the training videos and quizzes for access to using Fab Lab equipment.
 
-You’re in the midst of a project for Dr. Dodd’s class that will effectively require your utilization of the Fabrication Lab. It would behoove you to complete the respective trainings before you come to the shop (likely the 3D printer and laser cutter trainings). There are a large number of you in need of the limited tools we’ve got, so you’ll make the most efficient use of your time by sitting at the computer at home or in the Union, than here in the shop. DO NOT FORGET the ‘Culture quiz’ as it is a barrier between you and entering the shop at all.
+You’re in the midst of a project for Karen’s class that will be meeting in the Fabrication Lab to complete the assignment. It would behoove you to complete the respective trainings before you come to the shop, namely, the Laser Cutter training. There are a large number of you in need of the limited machines we’ve got, so you’ll make the most efficient use of your time by sitting at the computer at home or in the Union, than here in the shop. DO NOT FORGET the ‘Culture quiz’ as it is a barrier between you and entering the shop at all.
 
 This new method of training and keeping up with access is a huge undertaking on our end, so we’re thankful for your patience and feedback! It is new and complex, and again, your insight is helpful; If you run into new issues or challenges, please let us know.
 
@@ -41,12 +53,12 @@ fablab@ou.edu`)
             console.error(err.response.data)
             if (err?.response?.data?.errors?.[0].message == "The specified resource does not exist.") {
                 console.log("Creating account and enrolling user")
-                createUser(email, name).then((response) => {
-                    res(response)
-                }).catch((err) => {
-                    console.error("Failed to create account")
-                    rej(err)
-                })
+                //createUser(email, name).then((response) => {
+                    //res(response)
+                //}).catch((err) => {
+                    //console.error("Failed to create account")
+                    //rej(err)
+                //})
             }
         })
     })
@@ -181,16 +193,30 @@ class DBTools {
             console.log(toEnroll)
             toEnroll.pop()
             for (let i in toEnroll) {
-                try {
-                    this.db.run("UPDATE guests SET name = ? WHERE guest_id = ?", toEnroll[i]["First Name"] + " " + toEnroll[i]["Last Name"], toEnroll[i]["Sooner ID"], (err) => {
-                        if (err) console.error(err)
-			console.log("Fixed guest", toEnroll[i]["Sooner ID"])
-                    })
-                } catch (e) {
-                    console.error("Non-OU student assumed:")
-                    console.error(e)
-                    console.error("See above")
-                }
+		if (toEnroll[i]["First Name"]) {
+			enrollUser(toEnroll[i]["Sooner ID"], toEnroll[i]["Email Address"], toEnroll[i]["First Name"] + " " + toEnroll[i]["Last Name"]).then((id) => {
+				try {
+                    			this.db.run("INSERT INTO guests(guest_id, name, email, canvas_id) VALUES (?, ?, ?, ?)", toEnroll[i]["Sooner ID"], toEnroll[i]["First Name"] + " " + toEnroll[i]["Last Name"], toEnroll[i]["Email Address"], id, (err) => {
+                        			if (err) console.error(err)
+		        			console.log("Created guest", toEnroll[i]["Sooner ID"])
+						this.db.run("INSERT INTO history(guest_id, type, date, resolved) VALUES (?, ?, ?, 0)",
+				                        toEnroll[i]["Sooner ID"], history_types.FIRST_VISIT, new Date().toISOString(), (err) => {
+			                            if (err) {
+                        			        rej(err)
+			                                return
+                        			    }
+						})
+                    			})
+		                } catch (e) {
+                		    console.error("Non-OU student assumed:")
+		                    console.error(e)
+                		    console.error("See above")
+		                }
+
+			}).catch(console.error)
+		} else {
+			console.error("No first name")
+		}
             }
         })
     }

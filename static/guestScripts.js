@@ -10,6 +10,7 @@ function signIn(id) {
                 showRegistration(id)
             //If the status code says it worked, show that text and then show home
             } else if (xhr.status == 200) {
+                $("#waiverModal").modal("hide")
                 $("#signInText").text(data.message === "Hello!" ? "Welcome back!" : "Goodbye!")
                 window.scrollTo({left: window.innerWidth * 3, top: 0, behavior: "smooth"})
                 setTimeout(showHome, 2000)
@@ -83,6 +84,7 @@ function register() {
             console.error(data)
             console.error(status)
             console.error(xhr)
+            alert("Something went wrong. Check your input, and let a staff member know if this continues to fail.")
         }
     )
     return false
@@ -94,6 +96,20 @@ function showHome() {
     $("#swipeArea").focus()
     //Scroll to the home screen
     window.scrollTo({left: window.innerWidth * 2, top: 0, behavior: "smooth"})
+}
+
+function showModal() {
+    //Validation
+    if (!(
+        $("#IDInput").val() &&
+        $("#NameInput").val() &&
+        $("#EmailInput").val()
+    )) return false
+    if (!($("#EmailInput").val().includes("@"))) {
+        $("#EmailInput")[0].setCustomValidity("is-invalid")
+        return
+    }
+    $("#waiverModal").modal("show")
 }
 
 //On ready
@@ -128,7 +144,7 @@ $(document).ready(() => {
                 if (!form.checkValidity()) {
                     event.stopPropagation()
                 } else {
-                    register()
+                    showModal()
                 }
         
                 form.classList.add('was-validated')

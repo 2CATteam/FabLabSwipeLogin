@@ -579,8 +579,8 @@ function addRemoveCert(guest, index) {
 function resolve(event_id, user) {
     socket.send(JSON.stringify({
         type: "resolve",
-        id: event_id,
-        user: user
+        id: event_id.toString(),
+        user: user.toString()
     }))
 }
 

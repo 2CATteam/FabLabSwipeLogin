@@ -494,7 +494,7 @@ WSS.on('connection', async function(ws) {
                 break
             //Revoke a certification
             case "revokeCert":
-                await dbConnection.removeCert(args.id, args.cert, args.reason)
+                await dbConnection.removeCert(args.id, args.cert, args.reason, instances[getNameFromAuth(ws.secret)].certs)
                 //Broadcast the updated guest info
                 broadcastGuest(getNameFromAuth(ws.secret), args.id)
                 break
@@ -508,7 +508,7 @@ WSS.on('connection', async function(ws) {
             case "resolve":
                 await dbConnection.resolve(args.id)
                 //Broadcast the updated guest history
-                broadcastGuest(getNameFromAuth(ws.secret), args.user)
+                broadcastGuest(getNameFromAuth(ws.secret), args.user).catch(console.error)
                 break
             //Add a task to be done and broadcast the updated task list
             case "addTask":
@@ -630,33 +630,18 @@ async function broadcastTasks(name) {
 
 //Check the certifications for every user currently signed in across every shop. Called periodically, as described at the bottom of this program
 function checkCerts() {
-    //For each shop
+    //Call the below function for each instance
     for (let i in instances) {
-        console.log("Checking certifications for instance", i)
-        //Get the database connection, and check certifications for it
-        getDBConnectionFromName(i).checkCerts(instances[i].certs).then(async (changed) => {
-            //If there was a change, broadcast the new shallow user data
-            if (changed) {
-                console.log("Broadcasting that there was a change")
-                let status = await getDBConnectionFromName(i).getStatus()
-                let toSend = {
-                    type: "guestList",
-                    data: status
-                }
-                WSS.clients.forEach((client) => {
-                    if (client.readyState === WS.OPEN && getNameFromAuth(client.secret) == i) {
-                        client.send(JSON.stringify(toSend))
-                    }
-                })
-            }
-        }).catch(console.error)
+        checkCertsForInstance(i)
     }
 }
 
 //Check the certifications for a specific instance. Called whenever someone signs in. Same as the inner loop from above.
 function checkCertsForInstance(i) {
     console.log("Checking certifications for instance", i)
+    //Get the database connection, and check certifications for it
     getDBConnectionFromName(i).checkCerts(instances[i].certs).then(async (changed) => {
+        //If there was a change, broadcast the new shallow user data
         if (changed) {
             console.log("Broadcasting that there was a change")
             let status = await getDBConnectionFromName(i).getStatus()
@@ -695,8 +680,40 @@ let job = schedule.scheduleJob('30 3 * * *', async () => {
     }
 })
 
+async function doExpiration() {
+    try {
+        for (let i in instances) {
+            await instances[i].dbConnection.checkExpirationTimer(instances[i].certs, 31, 45, 24 * 60 * 60 * 1000) //Number of milliseconds in a day
+            let status = await instances[i].dbConnection.getStatus()
+            let toSend = {
+                type: "guestList",
+                data: status
+            }
+            WSS.clients.forEach((client) => {
+                if (client.readyState === WS.OPEN && getNameFromAuth(client.secret) == i) {
+                    client.send(JSON.stringify(toSend))
+                }
+            })
+        }
+    } catch (e) {
+        console.error("Error signing people out:")
+        console.error(e)
+    }
+}
+
+//Used for testing
+/*setTimeout(() => {
+    doExpiration().catch(console.error)
+    console.log("Started doing expiration")
+}, 5000)*/
+
+//Do cert expiration
+let job2 = schedule.scheduleJob('30 14 * * *', doExpiration)
+
+//Regularly check certification expiration
+
 //Check certifications every now and then
-setInterval(checkCerts, 5 * 60 * 1000)
+setInterval(checkCerts, 5 * 60 * 100)
 
 //Say that you're up
 console.log(`Listening on port ${port}!`)

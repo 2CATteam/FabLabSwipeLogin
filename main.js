@@ -153,7 +153,7 @@ app.post('/signin', (req, res) => {
                     broadcastGuest(req.cookies.shop, args.id)
                     //Respond
                     res.writeHead(200, { 'Content-Type': 'application/json' })
-                    res.end(JSON.stringify({ status: "success", message: toReturn ? "Hello!" : "Goodbye!" }))
+                    res.end(JSON.stringify({ status: "success", message: toReturn ? toReturn : "Goodbye!" }))
                     //Chech this instance's certifications
                     checkCertsForInstance(req.cookies.shop)
                 } catch (e) {

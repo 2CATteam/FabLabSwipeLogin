@@ -11,7 +11,7 @@ function signIn(id) {
             //If the status code says it worked, show that text and then show home
             } else if (xhr.status == 200) {
                 $("#waiverModal").modal("hide")
-                $("#signInText").text(data.message === "Hello!" ? "Welcome back!" : "Goodbye!")
+                $("#signInText").text(data.message === "Goodbye!" ? "Goodbye!" : "Welcome back!")
                 window.scrollTo({left: window.innerWidth * 3, top: 0, behavior: "smooth"})
                 setTimeout(showHome, 2000)
             } else {
@@ -96,6 +96,7 @@ function showHome() {
     $("#swipeArea").focus()
     //Scroll to the home screen
     window.scrollTo({left: window.innerWidth * 2, top: 0, behavior: "smooth"})
+    $("#waiverModal").modal("hide")
 }
 
 function showModal() {

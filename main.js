@@ -1,4 +1,5 @@
 //Require stack
+const fs = require("fs")
 const express = require('express')
 const app = express()
 const path = require('path')
@@ -8,8 +9,8 @@ const port = 4000
 const favicon = require('serve-favicon');
 const {v4: uuidv4} = require('uuid')
 const schedule = require('node-schedule');
-var instances = require("./lib/instances.js")
-const passwords = require("./lib/passwords.js")
+var instances = require("./lib/instances.json")
+const passwords = require("./lib/passwords.json")
 const dbTools = require("./lib/databaseTools.js")
 const canvasTools = require("./lib/canvasTools.js")
 
@@ -172,7 +173,7 @@ app.post('/signin', (req, res) => {
             } else if (args.type == "register") {
                 try {
                     //Make the user and broadcast it
-                    await dbConnection.createUser(args.id, args.name, args.email, args.signin ?? true)
+                    await dbConnection.createUser(args.id, args.name, args.email, args.signin ?? true, instances[req.cookies.shop].strings)
                     broadcastGuest(req.cookies.shop, args.id)
                     //Send 200
                     res.writeHead(200, { 'Content-Type': 'application/json' })
@@ -358,7 +359,11 @@ for (let i in instances) {
     //Path to guest page
     router.get('/guests', (req, res) => {
         res.cookie('shop', i)
-        res.sendFile(path.join(__dirname, '/static/guestViewNew.html'))
+        res.render('guestView.pug', {
+            waiver: instances[i].strings.waiver,
+            registrationConfirmation: instances[i].strings.registrationConfirmation,
+            welcomeString: instances[i].strings.welcomeString
+        })
     })
 
     //Path to link to enroll
@@ -386,6 +391,99 @@ for (let i in instances) {
     //Tell it to actually use the router as part of this subpath
     app.use(`/${i}`, router)
 }
+
+//Lets users change instance data
+app.post('/adminChanges', (req, res) => {
+    //Get args
+    let info = ""
+    req.on("data", (chunk) => {
+        info += chunk
+    })
+    req.on('end', () => {
+        try {
+            let changes = JSON.parse(info)
+            if (!getNameFromAuth(req.cookies.token)) {
+                res.writeHead(401, "Unauthorized")
+                res.end()
+                return
+            }
+            for (let i in changes) {
+                let args = changes[i].args
+                switch (changes[i].type) {
+                    case "addShop":
+                        if (instances[args.shopName]) {
+                            res.writeHead(409, "Already exists")
+                            res.end()
+                            return
+                        }
+                        instances[args.shopName] = {
+                            dbName: args.shopName + ".db",
+                            certs: [],
+                            strings: instances[getNameFromAuth(req.cookies.token)].strings
+                        }
+                        passwords[args.shopName] = {
+                            username: args.username,
+                            password: args.password
+                        }
+                        break
+                    case "addCert":
+                        let replacing = null
+                        for (let j in instances[getNameFromAuth(req.cookies.token)].certs) {
+                            if (instances[getNameFromAuth(req.cookies.token)].certs[j].id == args.id) {
+                                replacing = j
+                            }
+                        }
+                        if (replacing) {
+                            instances[getNameFromAuth(req.cookies.token)].certs.splice(replacing, 1, args)
+                        } else {
+                            instances[getNameFromAuth(req.cookies.token)].certs.push(args)
+                        }
+                        break
+                    case "setStrings":
+                        for (let j in args) {
+                            instances[getNameFromAuth(req.cookies.token)].strings[j] = args[j]
+                        }
+                        break
+                }
+            }
+
+            //Copy changes to a new object so we can delete the tokens and dbconnections
+            let newInstances = instances
+            for (let i in newInstances) {
+                delete newInstances[i].dbConnection
+                delete newInstances[i].tokens
+            }
+                
+            //Save changes and restart
+            fs.writeFile("./lib/instances.json", JSON.stringify(instances, null, "\t"), "utf-8", (err) => {
+                if (err) {
+                    console.error(err)
+                    res.writeHead(500, "Internal Server Error")
+                    res.end()
+                    return
+                }
+                //Save password too
+                fs.writeFile("./lib/passwords.json", JSON.stringify(passwords, null, "\t"), "utf-8", (err) => {
+                    if (err) {
+                        console.error(err)
+                        res.writeHead(500, "Internal Server Error")
+                        res.end()
+                        return
+                    }
+                    res.writeHead(200, "Success")
+                    res.end()
+                    process.kill(process.pid, "SIGINT")
+                })
+            })
+        } catch (e) {
+            //Error handling
+            console.error("Caught the following error:")
+            console.error(e)
+            res.writeHead(400, "Bad Request")
+            res.end()
+        }
+    })
+})
 
 app.post('/quiz/:quiz(\\d+)/submit', (req, res) => {
     //Get args
@@ -520,6 +618,7 @@ WSS.on('connection', async function(ws) {
                 await dbConnection.doTask(args.id, args.date)
                 broadcastTasks(getNameFromAuth(ws.secret))
                 break
+            //Ping pong
             case "ping":
                 ws.send(JSON.stringify({type: "pong"}))
                 break
@@ -578,6 +677,22 @@ async function onAuth(ws) {
     toSend = {
         type: "tasks",
         data: tasks
+    }
+    ws.send(JSON.stringify(toSend))
+
+    //Send the text strings that the shop uses
+    let strings = instances[getNameFromAuth(ws.secret)]?.strings
+    toSend = {
+        type: "strings",
+        data: strings
+    }
+    ws.send(JSON.stringify(toSend))
+
+    //Send canvas info
+    let quizzes = await canvasTools.getQuizzes()
+    toSend = {
+        type: "canvasQuizzes",
+        data: quizzes
     }
     ws.send(JSON.stringify(toSend))
 }
@@ -683,7 +798,7 @@ let job = schedule.scheduleJob('30 3 * * *', async () => {
 async function doExpiration() {
     try {
         for (let i in instances) {
-            await instances[i].dbConnection.checkExpirationTimer(instances[i].certs, 31, 45, 24 * 60 * 60 * 1000) //Number of milliseconds in a day
+            await instances[i].dbConnection.checkExpirationTimer(instances[i].certs, instances[i].strings, 31, 45, 24 * 60 * 60 * 1000) //Number of milliseconds in a day
             let status = await instances[i].dbConnection.getStatus()
             let toSend = {
                 type: "guestList",
@@ -714,6 +829,24 @@ let job2 = schedule.scheduleJob('30 14 * * *', doExpiration)
 
 //Check certifications every now and then
 setInterval(checkCerts, 5 * 60 * 100)
+
+//Close everything gracefully
+process.on('SIGINT', async () => {
+    console.log('Stopping gracefully');
+    for (let i in instances) {
+        await (new Promise((resolve, reject) => {
+            instances[i].dbConnection.db.close((err) => {
+                if (err) {
+                    reject(err)
+                } else {
+                    resolve()
+                }
+            })
+        }))
+    }
+    console.log('Closed everything gracefully')
+    process.exit(0)
+})
 
 //Say that you're up
 console.log(`Listening on port ${port}!`)

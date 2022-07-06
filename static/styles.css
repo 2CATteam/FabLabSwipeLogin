@@ -84,7 +84,7 @@
     min-width: 150px;
 }
 
-hr {
+.guestHR {
     border: 2px solid #535AFFFF;
     background: #535AFF 0% 0% no-repeat padding-box;
     opacity: 1;
@@ -95,4 +95,14 @@ tr, td {
     -moz-transition: all 0.5s linear;
     -o-transition: all 0.5s linear;
     transition: all 0.5s linear;
+}
+
+.spaceChildrenVertically > * {
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.spaceChildrenHorizontally > * {
+    margin-left: 0.5rem;
+    margin-right: 0.5rem;
 }

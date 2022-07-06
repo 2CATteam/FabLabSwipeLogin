@@ -4,6 +4,9 @@ var cache = {}
 var searchResults = null
 var tasks = []
 var certs = []
+var strings = {}
+var canvasQuizzes = []
+var queuedChanges = []
 var shown = null
 var socket = null
 var pingInterval = null
@@ -18,6 +21,7 @@ const history_types = {
     VISIT: 5,
     FIRST_VISIT: 6,
     AUTO_ADD: 7,
+    MESSAGE: 8
 }
 
 //Open the Websocket connection to the server
@@ -123,8 +127,19 @@ function openSocket() {
             //Handle the defining of certifications
             case "certs":
                 makeCertLabels(obj.data)
+                makeCertSelects()
                 break
             case "pong":
+                break
+            //Save strings and update the string editor, if needed
+            case "strings":
+                strings = obj.data
+                updateStringEditor()
+                break
+            //Save quiz data and update the canvas quiz selector
+            case "canvasQuizzes":
+                canvasQuizzes = obj.data
+                updateCanvasQuizzes()
                 break
         }
         if (guests?.[113428714]?.dataRow?.parents?.()?.length < 6) {
@@ -970,6 +985,218 @@ function makeCertLabels(newList) {
     //50,000 Lines of Code used to live here. Now, it's a ghost town
 }
 
+//Adds the relevant quiz selections in the admin certification editor
+function updateCanvasQuizzes() {
+    $("#ccQuiz").empty()
+    $("#ccQuiz").append("<option selected>No quiz</option>")
+    for (let i in canvasQuizzes) {
+        $("#ccQuiz").append(`<option value="${canvasQuizzes[i].quizId}">${canvasQuizzes[i].name}</option>`)
+    }
+}
+
+//Changes the text in the admin string editor to match the currently selected piece of text
+function updateStringEditor() {
+    $("#ssText").val(strings[$("#ssSelect").val()])
+}
+
+//Makes the Select options in the admin cert editor
+function makeCertSelects() {
+    $("#ccID").empty()
+    $("#ccID").append("<option selected>Create a new Certification</option>")
+    let groups = {}
+    for (let i in certs) {
+        $("#ccID").append(`<option value="${certs[i].id}">${certs[i].name} (ID ${certs[i].id})</option>`)
+        if (certs[i].group) {
+            if (!groups[certs[i].group]) groups[certs[i].group] = []
+            groups[certs[i].group].push(certs[i].name)
+        }
+    }
+    $("#ccGroup").empty()
+    $("#ccGroup").append("<option selected>No group</option>")
+    for (let i = 1; i < 128; i++) {
+        if (!groups[i]) {
+            $("#ccGroup").append(`<option value="${i}">Create new group</option>`)
+            break
+        }
+    }
+    for (let i in groups) {
+        let string = ""
+        for (let j in groups[i]) {
+            string += groups[i][j]
+            string += ", "
+        }
+        string = string.replace(/, $/, "")
+        $("#ccGroup").append(`<option value="${i}">Group ${i} (${string ?? "Empty"})</option>`)
+    }
+}
+
+//Puts an item in the queue of staged changes
+function stageCreateShop() {
+    let shopName = $("#csShopName").val()
+    let username = $("#csUsername").val()
+    let password = $("#csPassword").val()
+    if (!shopName.match(/^[a-zA-Z0-9]+$/)) {
+        alert("Shop name is required, and must only contain alphanumeric characters")
+        return
+    }
+    if (!username.match(/^[a-zA-Z0-9]+$/)) {
+        alert("Username is required, and must only contain alphanumeric characters")
+        return
+    }
+    if (!password.match(/^[a-zA-Z0-9]+$/)) {
+        alert("Password is required, and must only contain alphanumeric characters")
+        return
+    }
+    if (password != $("#csPasswordMatch").val()) {
+        alert("Passwords do not match")
+        return
+    }
+    queuedChanges.push({
+        type: "addShop",
+        args: {
+            shopName: $("#csShopName").val(),
+            username: $("#csUsername").val(),
+            password: $("#csPassword").val()
+        }
+    })
+    $("#csShopName").val("")
+    $("#csUsername").val("")
+    $("#csPassword").val("")
+    $("#csPasswordMatch").val("")
+    generateStagedChanges()
+}
+
+function stageCreateCert() {
+    let certID = $("#ccID").val()
+    //Find any unused cert id
+    if (certID == "Create a new Certification") {
+        let ids = []
+        for (let i in certs) {
+            ids.push(certs[i].id)
+        }
+        certID = 0
+        while (ids.includes(certID)) {
+            certID++
+        }
+    }
+    let name = $("#ccName").val()
+    if (!name) {
+        alert("A certification name is required")
+        return
+    }
+    let description = $("#ccDescription").val()
+    let color = $("#ccColor").val()
+    let group = $("#ccGroup").val()
+    if (group == "No group") {
+        group = null
+    }
+    let canvasQuiz = $("#ccQuiz").val()
+    if (canvasQuiz == "No quiz") {
+        canvasQuiz = null
+    }
+    let expirationExempt = $("#ccExpirationExempt").prop("checked")
+    queuedChanges.push({
+        type: "addCert",
+        args: {
+            name: name,
+            description: description,
+            id: certID,
+            color: color,
+            group: group,
+            quizId: canvasQuiz,
+            assignmentId: "1712603",
+            expirationExempt: expirationExempt
+        }
+    })
+    $("#ccID").val("Create a new Certification")
+    $("#ccName").val("")
+    $("#ccDescription").val("")
+    $("#ccColor").val("#000000")
+    $("#ccGroup").val("No group")
+    $("#ccQuiz option:first-child").prop("selected", true)
+    $("#ccExpirationExempt").prop("checked", false)
+    generateStagedChanges()
+}
+
+function stageEditStrings() {
+    let args = {}
+    args[$("#ssSelect").val()] = $("#ssText").val()
+    queuedChanges.push({
+        type: "setStrings",
+        args: args
+    })
+    $("#ssSelect").val("")
+    $("#ssText").val("")
+    generateStagedChanges()
+}
+
+function generateStagedChanges() {
+    $("#adminChangeQueue").empty()
+    if (queuedChanges.length == 0) {
+        $("#adminChangeQueue").append(`<p class="text-light text-center">No changes staged</p>`)
+    } else {
+        for (let i in queuedChanges) {
+            let toAdd = $(document.getElementById("queueItem").cloneNode(true).content)
+            let text = ""
+            if (queuedChanges[i].type == "addShop") {
+                text = 'Creating shop "' + queuedChanges[i].args.shopName + '"'
+            } else if (queuedChanges[i].type == "addCert") {
+                text = 'Adding/Editing cert "' + queuedChanges[i].args.name + '"'
+            } else if (queuedChanges[i].type == "setStrings") {
+                text = 'Editing string "' + Object.keys(queuedChanges[i].args)[0] + '"'
+            } else {
+                text = "Unknown operation"
+            }
+            toAdd.find(".queueText").text(text)
+            toAdd.find(".queueCode").text(JSON.stringify(queuedChanges[i].args, null, "    "))
+            toAdd.find(".queueItemBase").click(function () {
+                $(this).find(".queueExpand").slideToggle()
+            })
+            $("#adminChangeQueue").append(toAdd)
+        }
+    }
+}
+
+function clearAdminChanges() {
+    queuedChanges = []
+    generateStagedChanges()
+}
+
+function submitAdminChanges() {
+    let stringChanges = false
+    for (let i in queuedChanges) {
+        if (queuedChanges[i].type == "setStrings") {
+            stringChanges = true
+            Object.assign(strings, queuedChanges[i].args)
+        }
+    }
+    if (stringChanges) {
+        queuedChanges = queuedChanges.filter((value) => value.type != "setStrings")
+        queuedChanges.push({
+            type: "setStrings",
+            args: strings
+        })
+    }
+    $.post("/adminChanges", JSON.stringify(queuedChanges)).done((data, status, xhr) => {
+        console.log(data)
+        if (xhr.status != 200) {
+            console.error(xhr.status)
+            return
+        }
+        queuedChanges = []
+        generateStagedChanges()
+        setTimeout(() => {location.reload()}, 2000)
+    })
+    .fail((data, status, xhr) => {
+        console.error(xhr)
+    })
+}
+
+function logOut() {
+    setCookie('token', '; Max-Age=0; path=/')
+    location.reload()
+}
+
 //On start, open the socket and enable all the tooltips
 $(document).ready(() => {
     openSocket()
@@ -991,6 +1218,40 @@ $(document).ready(() => {
             submitEdits()
         } else if (e.key == "Escape") {
             cancelEdits()
+        }
+    })
+    $("#ssSelect").change(() => {
+        updateStringEditor()
+    })
+    $("#ccID").change(() => {
+        let found = null
+        for (let i in certs) {
+            if (parseInt($("#ccID").val()) == certs[i].id) {
+                found = certs[i]
+            }
+        }
+        if (found) {
+            $("#ccName").val(found.name)
+            $("#ccDescription").val(found.description)
+            $("#ccColor").val(found.color)
+            if (found.group) {
+                $("#ccGroup").val(found.group)
+            } else {
+                $("#ccGroup").val("No group")
+            }
+            if (found.quizId) {
+                $(`#ccQuiz option[value='${found.quizId}']`).prop("selected", true)
+            } else {
+                $("#ccQuiz option:first-child").prop("selected", true)
+            }
+            $("#ccExpirationExempt").prop("checked", found.expirationExempt ? true : false)
+        } else {
+            $("#ccName").val("")
+            $("#ccDescription").val("")
+            $("#ccColor").val("#000000")
+            $("#ccGroup").val("No group")
+            $("#ccQuiz option:first-child").prop("selected", true)
+            $("#ccExpirationExempt").prop("checked", false)
         }
     })
 })

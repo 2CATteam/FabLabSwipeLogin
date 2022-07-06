@@ -1,5 +1,7 @@
 node_modules/
 *.db
 lib/passwords.js
+lib/passwords.json
 lib/canvasInfo.js
 lib/emailAuth.js
+.vscode/

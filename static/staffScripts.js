@@ -258,9 +258,9 @@ function generateRow(guest, doCache) {
             //If they have the first cert but not the second cert, the second cert needs to be removed
             if ((guest.certs & (1 << certs[i].id)) && !(guest.certs & (1 << certs[j].id))) {
                 toRemove[j] = 1
-            //If they have the second cert but not the first, the first should be removed
+            //If they have the second cert but not the first, the second should be removed
             } else if (!(guest.certs & (1 << certs[i].id)) && (guest.certs & (1 << certs[j].id))) {
-                toRemove[i] = 1
+                toRemove[j] = 1
             //If you have both or neither, the one with the lower ID gets removed
             } else if (certs[i].id > certs[j].id) {
                 toRemove[j] = 1
@@ -804,6 +804,7 @@ function updateTasks(newList) {
         newList[i].date = new Date(newList[i].date)
     }
     let now = new Date()
+    //Sort the new list of tasks by date
     newList.sort((a, b) => {
         //Number of days until each is due
         let aLeft = Math.floor((now - a.date) / 86400000) - a.period
@@ -817,6 +818,7 @@ function updateTasks(newList) {
     let index = 0
     let start = 0
     for (let i in newList) {
+        //While we have the task and it's not in the right space, remove everything before it until we find it
         while (tasksInclude(newList[i].task_id) && tasks[index].task_id != newList[i].task_id) {
             if ((Math.floor((now - tasks[index].date) / 86400000) - tasks[index].period) >= 0) start++
             //https://stackoverflow.com/questions/467336/how-to-use-slidedown-or-show-function-on-a-table-row
@@ -829,9 +831,13 @@ function updateTasks(newList) {
                 .slideUp(400, function() { this.remove() }.bind(tasks[index].element))
             tasks.splice(index, 1)
         }
+        //If it's still in the right spot
         if (tasksInclude(newList[i].task_id)) {
+            //If the date has been updated
             if (tasks[index].date - newList[i].date != 0) {
+                //I don't remember what this does... I think it checks if it's due today, and if so, increases the dividing line between due now and due later
                 if ((Math.floor((now - tasks[index].date) / 86400000) - tasks[index].period) >= 0) start++
+                //Delete this task's row
                 //https://stackoverflow.com/questions/467336/how-to-use-slidedown-or-show-function-on-a-table-row
                 tasks[index].element
                     .find('td')
@@ -840,18 +846,46 @@ function updateTasks(newList) {
                     .parent()
                     .find('td > div')
                     .slideUp(400, function() { this.remove() }.bind(tasks[index].element))
+                //Remove this item and regen it later
                 tasks.splice(index, 1)
             } else {
+                //Move on to the next item
                 index++
             }
         }
     }
+    //Go through the old list, and remove any items not in the new list
+    for (let i = tasks.length - 1; i >= 0; i--) {
+        //Check if the new list has this task
+        let found = false
+        for (let j in newList) {
+            if (newList[j].task_id == tasks[i].task_id) {
+                found = true
+                break
+            }
+        }
+        //If it doesn't, delete it and its row
+        if (!found) {
+            tasks[i].element
+                .find('td')
+                .css("padding", "0")
+                .wrapInner('<div style="display: block;" />')
+                .parent()
+                .find('td > div')
+                .slideUp(400, function() { this.remove() }.bind(tasks[index].element))
+            tasks.splice(i, 1)
+        }
+    }
+    //For each item in the new list
     for (let i in newList) {
+        //If it's already in the list
         if (tasksInclude(newList[i].task_id)) {
+            //Update the row as required
             newList[i].element = tasks[i].element
             newList[i].element.find(".daysLeft").text(Math.max((Math.floor((now - newList[i].date) / 86400000) - newList[i].period) * -1, 0))
             tasks[i] = newList[i]
         } else {
+            //Make a new element
             newList[i].element = $(`<tr>
                 <td>
                     ${newList[i].name}
@@ -867,9 +901,12 @@ function updateTasks(newList) {
                 </td>
                 <td>
                     <button class="btn btn-primary" onclick="doTask(${newList[i].task_id})">Done</button>
+                    <button class="btn btn-danger" onclick="deleteTask(${newList[i].task_id})">Delete</button>
                 </td>
             </tr>`)
+            //Add it to the list
             tasks.splice(i, 0, newList[i])
+            //Add the row to the table
             if (i > 0) {
                 newList[i - 1].element.after(newList[i].element)
             } else {
@@ -877,6 +914,7 @@ function updateTasks(newList) {
                 if ((Math.floor((now - newList[0].date) / 86400000) - newList[0].period) < 0 && $("#dueLaterMarker").length) start++
                 $("#tasksTable tr").eq(start).after(newList[i].element)
             }
+            //Slide it in
             //https://stackoverflow.com/questions/467336/how-to-use-slidedown-or-show-function-on-a-table-row
             newList[i].element
                 .find('td')
@@ -886,7 +924,9 @@ function updateTasks(newList) {
                 .slideDown()
         }
     }
+    //If there is stuff to do now
     if (tasks.length > 0 && ((Math.floor((now - tasks[0].date) / 86400000) - tasks[0].period) >= 0)) {
+        //Add the marker
         if (!$("#dueNowMarker").length) {
             let element = $(`<tr id="dueNowMarker">
                 <td colspan="5" class="fs-5">
@@ -896,7 +936,11 @@ function updateTasks(newList) {
             $("#tasksTable tr").eq(0).after(element)
             element.slideDown()
         }
+        //Add the red button
+        $("#nav-tasks-tab").addClass("bg-danger")
+    //If nothing is due today
     } else {
+        //Then just remove the due now marker
         $("#dueNowMarker")
             .find('td')
             .css("padding", "0")
@@ -904,7 +948,10 @@ function updateTasks(newList) {
             .parent()
             .find('td > div')
             .slideUp(400, function() { this.remove() }.bind($("#dueNowMarker")))
+        //Make the button not red
+        $("#nav-tasks-tab").removeClass("bg-danger")
     }
+    //Remove the due later marker and re-add it in the correct spot
     $("#dueLaterMarker").remove()
     for (let i in tasks) {
         if ((Math.floor((now - tasks[i].date) / 86400000) - tasks[i].period) < 0) {
@@ -947,6 +994,14 @@ function createTask() {
     parseInt($("#taskPeriod").val("1"))
 }
 
+//Delete a task
+function deleteTask(id) {
+    socket.send(JSON.stringify({
+        type: "removeTask",
+        id: id,
+    }))
+}
+
 //Mark a task as recently done
 function doTask(id) {
     let done = new Date()
@@ -962,14 +1017,14 @@ function doTask(id) {
 }
 
 //Tell all the tasks that they're one day closer to being due
-function ageTasks() {
+function ageTasks(date) {
     let done = new Date()
     done.setHours(0)
     done.setMinutes(0)
     done.setSeconds(0)
     done.setMilliseconds(0)
     //Wait wtf what does this do?
-    done.setDate(20)
+    done.setDate(date)
     for (let i in tasks) {
         socket.send(JSON.stringify({
             type: "doTask",
@@ -1152,6 +1207,10 @@ function generateStagedChanges() {
             toAdd.find(".queueItemBase").click(function () {
                 $(this).find(".queueExpand").slideToggle()
             })
+            toAdd.find(".queueCancel").click(() => {
+                queuedChanges.splice(i, 1)
+                generateStagedChanges()
+            })
             $("#adminChangeQueue").append(toAdd)
         }
     }
@@ -1254,6 +1313,8 @@ $(document).ready(() => {
             $("#ccExpirationExempt").prop("checked", false)
         }
     })
+
+    setInterval(() => {updateTasks(tasks)}, 60000)
 })
 
 //Get document cookie from key

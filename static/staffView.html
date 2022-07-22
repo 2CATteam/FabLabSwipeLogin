@@ -129,33 +129,6 @@
                     <a class="btn btn-primary" href="/dataDump" download="shopDump.csv">Data dump download</a>
                     <button class="btn btn-danger" onclick="logOut()">Log Out</button>
                     <hr style="color: white; width: calc(100% - 1rem);">
-                    <!--Create a shop-->
-                    <button class="btn btn-success" onclick="$('#createShop').slideToggle()">Create a new shop instance</button>
-                    <div id="createShop" class="spaceChildrenVertically container" style="display: none; border: 1px solid white; border-radius: 6px; max-width: 40rem">
-                            <p class="text-light row gx-0">A shop will be created with the specified name and staff login credentials</p>
-                            <p class="text-light row gx-0">Once a new shop is created, you'll need to log in to its staff interface to add certifications, edit text, etc.</p>
-                            <p class="text-light row gx-0">All fields allow alphanumeric characters only (no spaces)</p>
-                            <div class="input-group row gx-0">
-                                <label class="input-group-text col-sm-4" for="csShopName">Shop name</label>
-                                <input id="csShopName" class="form-control" type="text" required>
-                            </div>
-                            <div class="invalid-feedback">Invalid shop name</div>
-                            <div class="input-group row gx-0">
-                                <label class="input-group-text col-sm-4" for="csUsername">Staff login username</label>
-                                <input id="csUsername" class="form-control" type="text" required>
-                            </div>
-                            <div class="invalid-feedback">Invalid username</div>
-                            <div class="input-group row gx-0">
-                                <label class="input-group-text col-sm-4" for="csPassword">Staff login password</label>
-                                <input id="csPassword" class="form-control" type="password" required>
-                            </div>
-                            <div class="invalid-feedback">Invalid Password</div>
-                            <div class="input-group row gx-0">
-                                <label class="input-group-text col-sm-4" for="csPasswordMatch">Confirm password</label>
-                                <input id="csPasswordMatch" class="form-control" type="password" required>
-                            </div>
-                        <button class="btn btn-primary" onclick="stageCreateShop()" data-bs-toggle="tooltip" title="After staging changes, you must still apply the changes to the right">Stage changes</button>
-                    </div>
                     <!--Certification settings-->
                     <button class="btn btn-success" onclick="$('#certSettings').slideToggle()">Add/edit certifications</button>
                     <div id="certSettings" class="spaceChildrenVertically container" style="display: none; border: 1px solid white; border-radius: 6px; max-width: 40rem">
@@ -177,7 +150,7 @@
                             <label class="input-group-text col-sm-4" for="ccColor">Certification Color</label>
                             <input id="ccColor" class="form-control form-control-color col" type="color" style="max-width: initial" required>
                         </div>
-                        <div class="input-group row gx-0" data-bs-toggle="tooltip" title="Putting a certification in a group will make it progressive within that group. If unsure, leave this as 'no group'">
+                        <div class="input-group row gx-0" data-bs-toggle="tooltip" title="Putting a certification in a group will make it progressive within that group. That is, later certs will require and replace the first cert. If unsure, leave this as 'no group'">
                             <label class="input-group-text col-sm-4" for="ccGroup">Certification Group</label>
                             <select id="ccGroup" class="form-select col" style="padding-right: 12px;">
                                 <option selected>No group</option>
@@ -216,6 +189,33 @@
                         </div>
                         <textarea class="row gx-0 form-control" rows="4" id="ssText" placeholder="Edit text here"></textarea>
                         <button class="btn btn-primary" onclick="stageEditStrings()" data-bs-toggle="tooltip" title="After staging changes, you must still apply the changes to the right">Stage changes</button>
+                    </div>
+                    <!--Create a shop-->
+                    <button class="btn btn-danger mt-5" onclick="$('#createShop').slideToggle()">Create a new shop instance</button>
+                    <div id="createShop" class="spaceChildrenVertically container" style="display: none; border: 1px solid white; border-radius: 6px; max-width: 40rem">
+                            <p class="text-light row gx-0">A shop will be created with the specified name and staff login credentials</p>
+                            <p class="text-light row gx-0">Once a new shop is created, you'll need to log in to its staff interface to add certifications, edit text, etc.</p>
+                            <p class="text-light row gx-0">All fields allow alphanumeric characters only (no spaces)</p>
+                            <div class="input-group row gx-0">
+                                <label class="input-group-text col-sm-4" for="csShopName">Shop name</label>
+                                <input id="csShopName" class="form-control" type="text" required>
+                            </div>
+                            <div class="invalid-feedback">Invalid shop name</div>
+                            <div class="input-group row gx-0">
+                                <label class="input-group-text col-sm-4" for="csUsername">Staff login username</label>
+                                <input id="csUsername" class="form-control" type="text" required>
+                            </div>
+                            <div class="invalid-feedback">Invalid username</div>
+                            <div class="input-group row gx-0">
+                                <label class="input-group-text col-sm-4" for="csPassword">Staff login password</label>
+                                <input id="csPassword" class="form-control" type="password" required>
+                            </div>
+                            <div class="invalid-feedback">Invalid Password</div>
+                            <div class="input-group row gx-0">
+                                <label class="input-group-text col-sm-4" for="csPasswordMatch">Confirm password</label>
+                                <input id="csPasswordMatch" class="form-control" type="password" required>
+                            </div>
+                        <button class="btn btn-primary" onclick="stageCreateShop()" data-bs-toggle="tooltip" title="After staging changes, you must still apply the changes to the right">Stage changes</button>
                     </div>
                 </div>
                 <div class="d-flex flex-column justify-content-center align-items-stretch spaceChildrenVertically spaceChildrenHorizontally" style="background-color: #00000040; width: 480px;">

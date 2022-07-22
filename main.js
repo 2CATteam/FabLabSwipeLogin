@@ -613,6 +613,11 @@ WSS.on('connection', async function(ws) {
                 await dbConnection.createTask(args.name, args.description, args.period, args.date)
                 broadcastTasks(getNameFromAuth(ws.secret))
                 break
+            //Remove a task to be done and broadcast the updated task list
+            case "removeTask":
+                await dbConnection.deleteTask(args.id)
+                broadcastTasks(getNameFromAuth(ws.secret))
+                break
             //Mark a task to be done and broadcast the updates task list
             case "doTask":
                 await dbConnection.doTask(args.id, args.date)
@@ -823,7 +828,7 @@ async function doExpiration() {
 }, 5000)*/
 
 //Do cert expiration
-let job2 = schedule.scheduleJob('30 14 * * *', doExpiration)
+//let job2 = schedule.scheduleJob('30 14 * * *', doExpiration)
 
 //Regularly check certification expiration
 

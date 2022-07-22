@@ -49,51 +49,42 @@
 			{
 				"name": "3D Printing",
 				"description": "This grants access to the 3D printers, and shows you how to set up your files for them.",
-				"id": 5,
-				"color": "#BB00FF",
+				"id": "5",
+				"color": "#8000ff",
+				"group": null,
 				"quizId": "296170",
-				"assignmentId": "1713394"
+				"assignmentId": "1712603",
+				"expirationExempt": false
 			}
 		],
 		"strings": {
-			"waiver": "I generally agree to just, like, be a super cool dude, dudette, or whatever form of chill I identify as. Not only will I not sue you guys, I'll also be happy to do whatever I can to help out.",
+			"waiver": "Poop\n\nHaha poop",
 			"registrationConfirmation": "Welcome! Check your email!",
-			"welcomeString": "Welcome to\nthe Fab Lab!",
+			"welcomeString": "Poop\n\nHaha poop",
 			"canvasWelcomeTitle": "Welcome to our Canvas course!",
-			"canvasWelcomeBody": "Welcome to the Tom Love Innovation Hub Fabrication Lab!\n\n            You’ve now been enrolled in a canvas course titled ‘Shop Fundamentals’ that you can access by signing into canvas just like you do for your other courses. This canvas course holds the training videos and quizzes for access to using Fab Lab equipment.\n            \n            Keep in mind, before you’ll be allowed to use any of our tools, in addition to the respective trainings, you’ll have to complete our Fab Lab Culture Quiz, which is just a mechanism for making sure you’re aware of how to engage with the shop. It’ll take you all of three minutes – maybe.\n            \n            This new method of training and keeping up with access is a huge undertaking on our end, so we’re thankful for your patience and feedback! It is new and complex, and again, your insight is helpful; If you run into new issues or challenges, please let us know.\n            \n            If you have any questions or comments, please email us at:\n            \n            fablab@ou.edu",
+			"canvasWelcomeBody": "Welcome to the Tom Love Innovation Hub Fabrication Lab!\n\nYou’ve now been enrolled in a canvas course titled ‘Shop Fundamentals’ that you can access by signing into canvas just like you do for your other courses. This canvas course holds the training videos and quizzes for access to using Fab Lab equipment.\n            \nKeep in mind, before you’ll be allowed to use any of our tools, in addition to the respective trainings, you’ll have to complete our Fab Lab Culture Quiz, which is just a mechanism for making sure you’re aware of how to engage with the shop. It’ll take you all of three minutes – maybe.\n            \nThis new method of training and keeping up with access is a huge undertaking on our end, so we’re thankful for your patience and feedback! It is new and complex, and again, your insight is helpful; If you run into new issues or challenges, please let us know.\n            \nIf you have any questions or comments, please email us at:\n            \nfablab@ou.edu",
 			"emailWelcomeTitle": "Welcome to the Fab Lab!",
 			"emailWelcomeBody": "Hey you! Welcome to the Fab Lab!\n\n            If you're getting this email, chances are you just showed up at the Fab Lab for the first time, or you're getting ready to go there soon. This email is just intended to give you a brief overview of what you need to do before you start using our machines.\n            \n            First off, every new visitor is required to take our Culture Quiz, which just establishes some expectations for how you conduct yourself in the lab. The link to that is here:\n            \n            https://www.oushoptraining.com/fabLab/CultureQuiz\n            \n            Second, you'll need to take the certification for whatever tool(s) you intend to use. You can see the full list of those here:\n            \n            https://www.oushoptraining.com/fabLab\n            \n            Once you've taken care of those two things, you're good to go! Let us know if you have any questions or problems, either by talking to a staff member in the shop, or emailing us at fablab@ou.edu",
-			"expirationWarningTitle": "Fab Lab tool certifications nearing expiration",
+			"expirationWarningTitle": "Fab Lab tool certifications nearing expiration :(",
 			"expirationWarningBody": "Hey there! Some of your Fab Lab tool certifications are close to expiring. In 14 days, you'll lose the following certifications:\n%certs%\n\nWe remove these certifications regularly, to make sure our shop is as safe as possible.\n\nIf you want to keep these certifications, you can either retake the certification quizzes, or come to the shop and put your trainings to use.\n\nOnce they expire, don't worry! You'll just need to retake the certification quizzes before you use their respective tools.",
-			"expirationHappenedTitle": "Fab Lab tool certifications have expired",
+			"expirationHappenedTitle": "Fab Lab tool certifications have expired :(",
 			"expirationHappenedBody": "Hey there! In an effort to make sure our shop is as safe as possible, our tool certifications regularly expire, after 45 days of not being used.\n\nAs a result, these tool certifications have expired:\n%certs%\n\nBefore you come into the shop to use these certifications' respective tools, you'll just need to retake the relevant certification quizzes."
 		}
 	},
 	"DanielsCoolShop": {
 		"dbName": "DanielsCoolShop.db",
-		"certs": [
-			{
-				"name": "Red",
-				"description": "REEEEEEEDD",
-				"id": 0,
-				"color": "#ff0000",
-				"group": "1",
-				"quizId": "296157",
-				"assignmentId": "1712603",
-				"expirationExempt": true
-			}
-		],
+		"certs": [],
 		"strings": {
-			"waiver": "I generally agree to just, like, be a super cool dude, dudette, or whatever form of chill I identify as. Not only will I not sue you guys, I'll also be happy to do whatever I can to help out.",
+			"waiver": "I generally agree to be a pretty chill dude, dudette, or whatever form of chill I identify as.",
 			"registrationConfirmation": "Welcome! Check your email!",
-			"welcomeString": "Poop\n\nHaha poop",
+			"welcomeString": "Daniel's shop\nis so cool!",
 			"canvasWelcomeTitle": "Welcome to our Canvas course!",
-			"canvasWelcomeBody": "Welcome to the Tom Love Innovation Hub Fabrication Lab!\n\n            You’ve now been enrolled in a canvas course titled ‘Shop Fundamentals’ that you can access by signing into canvas just like you do for your other courses. This canvas course holds the training videos and quizzes for access to using Fab Lab equipment.\n            \n            Keep in mind, before you’ll be allowed to use any of our tools, in addition to the respective trainings, you’ll have to complete our Fab Lab Culture Quiz, which is just a mechanism for making sure you’re aware of how to engage with the shop. It’ll take you all of three minutes – maybe.\n            \n            This new method of training and keeping up with access is a huge undertaking on our end, so we’re thankful for your patience and feedback! It is new and complex, and again, your insight is helpful; If you run into new issues or challenges, please let us know.\n            \n            If you have any questions or comments, please email us at:\n            \n            fablab@ou.edu",
+			"canvasWelcomeBody": "Welcome to the Tom Love Innovation Hub Fabrication Lab!\n\nYou’ve now been enrolled in a canvas course titled ‘Shop Fundamentals’ that you can access by signing into canvas just like you do for your other courses. This canvas course holds the training videos and quizzes for access to using Fab Lab equipment.\n            \nKeep in mind, before you’ll be allowed to use any of our tools, in addition to the respective trainings, you’ll have to complete our Fab Lab Culture Quiz, which is just a mechanism for making sure you’re aware of how to engage with the shop. It’ll take you all of three minutes – maybe.\n            \nThis new method of training and keeping up with access is a huge undertaking on our end, so we’re thankful for your patience and feedback! It is new and complex, and again, your insight is helpful; If you run into new issues or challenges, please let us know.\n            \nIf you have any questions or comments, please email us at:\n            \nfablab@ou.edu",
 			"emailWelcomeTitle": "Welcome to the Fab Lab!",
 			"emailWelcomeBody": "Hey you! Welcome to the Fab Lab!\n\n            If you're getting this email, chances are you just showed up at the Fab Lab for the first time, or you're getting ready to go there soon. This email is just intended to give you a brief overview of what you need to do before you start using our machines.\n            \n            First off, every new visitor is required to take our Culture Quiz, which just establishes some expectations for how you conduct yourself in the lab. The link to that is here:\n            \n            https://www.oushoptraining.com/fabLab/CultureQuiz\n            \n            Second, you'll need to take the certification for whatever tool(s) you intend to use. You can see the full list of those here:\n            \n            https://www.oushoptraining.com/fabLab\n            \n            Once you've taken care of those two things, you're good to go! Let us know if you have any questions or problems, either by talking to a staff member in the shop, or emailing us at fablab@ou.edu",
-			"expirationWarningTitle": "Fab Lab tool certifications nearing expiration",
+			"expirationWarningTitle": "Fab Lab tool certifications nearing expiration :(",
 			"expirationWarningBody": "Hey there! Some of your Fab Lab tool certifications are close to expiring. In 14 days, you'll lose the following certifications:\n%certs%\n\nWe remove these certifications regularly, to make sure our shop is as safe as possible.\n\nIf you want to keep these certifications, you can either retake the certification quizzes, or come to the shop and put your trainings to use.\n\nOnce they expire, don't worry! You'll just need to retake the certification quizzes before you use their respective tools.",
-			"expirationHappenedTitle": "Fab Lab tool certifications have expired",
+			"expirationHappenedTitle": "Fab Lab tool certifications have expired :(",
 			"expirationHappenedBody": "Hey there! In an effort to make sure our shop is as safe as possible, our tool certifications regularly expire, after 45 days of not being used.\n\nAs a result, these tool certifications have expired:\n%certs%\n\nBefore you come into the shop to use these certifications' respective tools, you'll just need to retake the relevant certification quizzes."
 		}
 	}

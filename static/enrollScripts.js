@@ -22,7 +22,7 @@ function register() {
             //When successful, show the success screen then show home
             if (data.message == "Registered and logged in") {
                 console.log("Hey we registered")
-                alert("Success! Check your Canvas inbox for more information.")
+                alert($("#welcomeText").text())
             }
             //Remove validation and clear values
             $("#IDInput").val("")
@@ -47,6 +47,20 @@ function register() {
     return false
 }
 
+function showModal() {
+    //Validation
+    if (!(
+        $("#IDInput").val() &&
+        $("#NameInput").val() &&
+        $("#EmailInput").val()
+    )) return false
+    if (!($("#EmailInput").val().includes("@"))) {
+        $("#EmailInput")[0].setCustomValidity("is-invalid")
+        return
+    }
+    $("#waiverModal").modal("show")
+}
+
 //On ready
 $(document).ready(() => {
     //Start focusing on the Swipe Area
@@ -64,7 +78,7 @@ $(document).ready(() => {
                 if (!form.checkValidity()) {
                     event.stopPropagation()
                 } else {
-                    register()
+                    showModal()
                 }
         
                 form.classList.add('was-validated')

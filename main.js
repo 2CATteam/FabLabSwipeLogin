@@ -369,7 +369,10 @@ for (let i in instances) {
     //Path to link to enroll
     router.get('/enroll', (req, res) => {
         res.cookie('shop', i)
-        res.sendFile(path.join(__dirname, '/static/enrollView.html'))
+        res.render('enrollView.pug', {
+            waiver: instances[i].strings.waiver,
+            registrationConfirmation: instances[i].strings.registrationConfirmation
+        })
     })
 
     //Add quiz pages for each certification with a quizId defined

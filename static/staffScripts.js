@@ -691,7 +691,7 @@ function markNotesForRow(user, parent, source) {
             string += notes.problem[i] + "\n\n"
         }
         string = string.trim()
-        let html = `<p data-bs-toggle="popover" data-bs-trigger="hover focus" title="Problems" data-bs-content="${string}" data-bs-placement="left" tab-index="0" class="text-center my-0 fs-5">🤬</p>`
+        let html = `<p data-bs-toggle="popover" data-bs-trigger="hover focus" title="Problems" data-bs-content="${string}" data-bs-placement="left" tab-index="0" class="text-center my-0 fs-5">❌</p>`
         let element = $(html).popover()
         parent.append(element)
     }
@@ -701,7 +701,7 @@ function markNotesForRow(user, parent, source) {
             string += notes.revoked[i] + "\n\n"
         }
         string = string.trim()
-        let html = `<p data-bs-toggle="popover" data-bs-trigger="hover focus" title="Revoked Certifications" data-bs-content="${string}" data-bs-placement="left" tab-index="0" class="text-center my-0 fs-5">😿</p>`
+        let html = `<p data-bs-toggle="popover" data-bs-trigger="hover focus" title="Revoked Certifications" data-bs-content="${string}" data-bs-placement="left" tab-index="0" class="text-center my-0 fs-5">👺</p>`
         let element = $(html).popover()
         parent.append(element)
     }

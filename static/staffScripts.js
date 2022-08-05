@@ -518,6 +518,9 @@ async function loadModal(guest) {
         }
         //Add text if needed for these types
         if (type == "Certification") {
+            if (!findCertById(localHistory[i].cert)) {
+                continue
+            }
             description = `${findCertById(localHistory[i].cert).name} certification was ${localHistory[i].type == 3 ? "revoked" : "added"} ${localHistory[i].type == 7 ? "automatically" : "manually"}${localHistory[i].note ? " with the following reason:\n\n" + localHistory[i].note : ""}`
         } else if (type == "Visit" && description) {
             description = `Left at ${new Date(description).toLocaleTimeString()}`
@@ -658,6 +661,9 @@ function markNotesForRow(user, parent, source) {
                 break
             //You get the idea
             case history_types.REVOKE_CERT:
+                if (!findCertById(source[user].history[i].cert)) {
+                    break
+                }
                 if (!notes.revoked) notes.revoked = []
                 notes.revoked.push(`${findCertById(source[user].history[i].cert).name} certification was ${source[user].history[i].type == 3 ? "revoked" : "added"} ${source[user].history[i].type == 7 ? "automatically" : "manually"}${source[user].history[i].note ? " with the following reason:\n\n" + source[user].history[i].note : ""}`)
                 break

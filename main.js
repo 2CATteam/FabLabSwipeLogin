@@ -71,12 +71,6 @@ function getNameFromAuth(secret) {
     return null
 }
 
-//Static HTML pages for enrollment and staff
-app.get('/enroll/:shop', (req, res) => {
-    res.cookie('shop', req.params.shop)
-    res.sendFile(path.join(__dirname, '/static/enrollView.html'))
-})
-
 app.get('/staff', (req, res) => {
     for (let i in instances) {
         if (instances[i].tokens?.includes(req.cookies?.token)) {

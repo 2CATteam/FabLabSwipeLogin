@@ -1165,7 +1165,7 @@ function stageCreateCert() {
             color: color,
             group: group,
             quizId: canvasQuiz,
-            assignmentId: canvasQuizzes.filter((item) => canvasQuiz === item.quizId)[0] ?? null,
+            assignmentId: canvasQuizzes.filter((item) => canvasQuiz === item.quizId)[0]?.assignmentId ?? null,
             expirationExempt: expirationExempt
         }
     })

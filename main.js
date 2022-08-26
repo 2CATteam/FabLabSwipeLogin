@@ -825,7 +825,7 @@ async function doExpiration() {
 }, 5000)*/
 
 //Do cert expiration
-//let job2 = schedule.scheduleJob('30 14 * * *', doExpiration)
+let job2 = schedule.scheduleJob('30 14 * * *', doExpiration)
 
 //Regularly check certification expiration
 

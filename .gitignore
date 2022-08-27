@@ -5,3 +5,4 @@ lib/passwords.json
 lib/canvasInfo.js
 lib/emailAuth.js
 .vscode/
+backups/

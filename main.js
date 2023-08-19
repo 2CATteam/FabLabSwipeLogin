@@ -341,11 +341,9 @@ for (let i in instances) {
 
     //Convenience path to access the staff page. Same as previous, but in this router
     router.get('/staff', (req, res) => {
-        for (let i in instances) {
-            if (instances[i].tokens?.includes(req.cookies?.token)) {
-                res.sendFile(path.join(__dirname, '/static/staffView.html'))
-                return
-            }
+        if (instances[i].tokens?.includes(req.cookies?.token)) {
+            res.sendFile(path.join(__dirname, '/static/staffView.html'))
+            return
         }
         res.sendFile(path.join(__dirname, '/static/loginView.html'))
     })
